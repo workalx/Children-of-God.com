@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Діти Бога</title>
+    <link rel="icon" type="image/jpeg" href="img/OIP.jpeg">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .extra-content {
+            margin-bottom: 130px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <img src="img/C__1.png" alt="ДБ" class="logo-uk">
+                <img src="img/C1.jpg" alt="COG" class="logo-en" style="display: none;">
+                <img src="img/C1-removebg-preview (1).png" alt="COG White" class="logo-en-white" style="display: none;">
+            </div>
+            <div class="nav-links">
+                <a href="contact.html" data-uk="Зв'язатися з нами" data-en="Contact Us" data-ru="Связаться с нами">Зв'язатися з нами</a>
+                <a href="#about" data-uk="Про нас" data-en="About Us" data-ru="О нас">Про нас</a>
+                <a href="#media" data-uk="Наша медія" data-en="Our Media" data-ru="Наша медиа">Наша медія</a>
+                <button class="lang-btn" onclick="toggleLanguage()" data-uk="Мова" data-en="Language" data-ru="Язык">Мова</button> 
+            </div>
+        </nav>
+    </header>
+
+    <main>
+            <div class="hero" id="hero">
+            <h1 class="main-title animate-on-scroll" data-uk="Ласкаво просимо на сайт &quot;Діти Бога&quot;" 
+                data-en="Welcome to &quot;Children of God&quot;"
+                data-ru="Добро пожаловать на сайт &quot;Дети Бога&quot;">Ласкаво просимо на сайт "Діти Бога"</h1>
+            
+            <div class="content-box animate-on-scroll" id="about">
+            
+                <h2 class="subtitle" data-uk="&quot;Діти Бога&quot; – музична християнська дитяча група"
+                    data-en="&quot;Children of God&quot; – Christian children's music group"
+                    data-ru="&quot;Дети Бога&quot; – музыкальная христианская детская группа">"Діти Бога" – музична християниська дитяча група</h2>
+                
+                <p class="description" data-uk="&quot;Діти Божі&quot; – це дружня команда дітей, які через музику діляться любов'ю, радістю та світлом Божого слова. Учасники групи виконують натхненні християниські пісні, що вчать добру, милосердю та вірі. Їхні виступи – це справжнє свято, де звучать щирі голоси, теплі посмішки та любов до Бога. Місія &quot;Дітей Божих&quot; – дарувати надію та нагадувати кожному, що світло Христове завжди поруч."
+                    data-en="&quot;Children of God&quot; is a friendly team of children who share love, joy and the light of God's word through music. Group members perform inspired Christian songs that teach goodness, mercy and faith. Their performances are a real celebration where sincere voices, warm smiles and love for God sound. The mission of &quot;Children of God&quot; is to give hope and remind everyone that Christ's light is always near."
+                    data-ru="&quot;Дети Божьи&quot; – это дружная команда детей, которые через музыку делятся любовью, радостью и светом Божьего слова. Участники группы исполняют вдохновенные христианские песни, которые учат добру, милосердию и вере. Их выступления – это настоящий праздник, где звучат искренние голоса, теплые улыбки и любовь к Богу. Миссия &quot;Детей Божьих&quot; – дарить надежду и напоминать каждому, что свет Христов всегда рядом.">"Діти Божі" – це дружня команда дітей, які через музику діляться любов'ю, радістю та світлом Божого слова. Учасники групи виконують натхненні християниські пісні, що вчать добру, милосердю та вірі. Їхні виступи – це справжнє свято, де звучать щирі голоси, теплі посмішки та любов до Бога. Місія "Дітей Божих" – дарувати надію та нагадувати кожному, що світло Христове завжди поруч.</p>
+            </div>
+        </div>
+        <div class="split-block-container animate-on-scroll" id="media">
+            <div class="split-left">
+                <div class="split-left-text" data-uk="Наша медія" data-en="Our Media" data-ru="Наша медиа">Наша медія</div>
+            </div>
+            <div class="split-right">
+                <div class="block" onclick="openModal('videoModal')">
+                    <img src="img/fon2.jpg" alt="Відео">
+                    <div class="block-text" data-uk="Відео" data-en="Video" data-ru="Видео">Відео</div>
+                </div>
+                <div class="block" onclick="openModal('songsModal')">
+                    <img src="img/fon3.jpg" alt="Пісні">
+                    <div class="block-text" data-uk="Пісні" data-en="Songs" data-ru="Песни">Пісні</div>
+                </div>
+                <div class="block" onclick="openModal('photoModal')">
+                    <img src="img/fon4.jpg" alt="Фото">
+                    <div class="block-text" data-uk="Фото" data-en="Photo" data-ru="Фото">Фото</div>
+                </div>
+            </div>
+            <div class="split-diagonal"></div>
+        </div>
+    </main>
+
+    <!-- Модальні вікна -->
+    <div id="videoModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('videoModal')">&times;</span>
+           
+            <div class="modal-inner-block" data-uk="Блок 1" data-en="Block 1" data-ru="Блок 1">Блок 1</div>
+            <div class="modal-inner-block" data-uk="Блок 2" data-en="Block 2" data-ru="Блок 2">Блок 2</div>
+            <div class="modal-inner-block" data-uk="Блок 3" data-en="Block 3" data-ru="Блок 3">Блок 3</div>
+            <div class="modal-inner-block" data-uk="Блок 4" data-en="Block 4" data-ru="Блок 4">Блок 4</div>
+            <div class="modal-inner-block" data-uk="Блок 5" data-en="Block 5" data-ru="Блок 5">Блок 5</div>
+            <div class="modal-inner-block" data-uk="Блок 6" data-en="Block 6" data-ru="Блок 6">Блок 6</div>
+        </div>
+    </div>
+
+    <div id="songsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('songsModal')">&times;</span>
+            
+            <div class="modal-inner-block" data-uk="Блок 1" data-en="Block 1" data-ru="Блок 1">Блок 1</div>
+            <div class="modal-inner-block" data-uk="Блок 2" data-en="Block 2" data-ru="Блок 2">Блок 2</div>
+            <div class="modal-inner-block" data-uk="Блок 3" data-en="Block 3" data-ru="Блок 3">Блок 3</div>
+            <div class="modal-inner-block" data-uk="Блок 4" data-en="Block 4" data-ru="Блок 4">Блок 4</div>
+            <div class="modal-inner-block" data-uk="Блок 5" data-en="Block 5" data-ru="Блок 5">Блок 5</div>
+            <div class="modal-inner-block" data-uk="Блок 6" data-en="Block 6" data-ru="Блок 6">Блок 6</div>
+        </div>
+    </div>
+
+    <div id="photoModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('photoModal')">&times;</span>
+            
+            <div class="modal-inner-block" data-uk="Блок 1" data-en="Block 1" data-ru="Блок 1">Блок 1</div>
+            <div class="modal-inner-block" data-uk="Блок 2" data-en="Block 2" data-ru="Блок 2">Блок 2</div>
+            <div class="modal-inner-block" data-uk="Блок 3" data-en="Block 3" data-ru="Блок 3">Блок 3</div>
+            <div class="modal-inner-block" data-uk="Блок 4" data-en="Block 4" data-ru="Блок 4">Блок 4</div>
+            <div class="modal-inner-block" data-uk="Блок 5" data-en="Block 5" data-ru="Блок 5">Блок 5</div>
+            <div class="modal-inner-block" data-uk="Блок 6" data-en="Block 6" data-ru="Блок 6">Блок 6</div>
+        </div>
+    </div>
+
+    <div class="burger" id="burger-menu">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+    <div class="mobile-nav" id="mobileNav">
+        <a href="index.html" data-uk="Головна" data-en="Home" data-ru="Главная">Головна</a>
+        <a href="#about" data-uk="Про нас" data-en="About Us" data-ru="О нас">Про нас</a>
+        <a href="contact.html" data-uk="Зв'язатися з нами" data-en="Contact Us" data-ru="Связаться с нами">Зв'язатися з нами</a>
+        <a href="#media" data-uk="Наша медія" data-en="Our Media" data-ru="Наша медиа">Наша медія</a>
+        <button class="lang-btn" onclick="toggleLanguage()" data-uk="Мова" data-en="Language" data-ru="Язык">Мова</button>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+    // Мобільне меню бургер
+    const burger = document.getElementById('burger-menu');
+    const mobileNav = document.getElementById('mobileNav');
+    burger.addEventListener('click', function() {
+        mobileNav.classList.toggle('active');
+    });
+    // Закриття меню при кліку на посилання або кнопку
+    mobileNav.querySelectorAll('a,button').forEach(el => {
+        el.addEventListener('click', () => mobileNav.classList.remove('active'));
+    });
+    </script>
+</body>
+</html> 
