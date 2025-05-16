@@ -25,14 +25,57 @@
     <main>
         <div class="contact-container animate-on-scroll">
             <h1 class="main-title animate-on-scroll" data-uk="Контакти" data-en="Contacts" data-ru="Контакты">Контакти</h1>
+    
+            <!-- Блок: Звуковий директор, адміністратор (перенесено наверх) -->
             <div class="contact-box animate-on-scroll">
-                <p class="contact-item" data-uk="Телефон: +380 12 345 67 89" data-en="Phone: +380 12 345 67 89" data-ru="Телефон: +380 12 345 67 89">Телефон: +380 12 345 67 89</p>
-                <p class="contact-item" data-uk="Email: info@ditiboga.com" data-en="Email: info@ditiboga.com" data-ru="Email: info@ditiboga.com">Email: info@ditiboga.com</p>
-                <p class="contact-item" data-uk="Ми у соцмережах:" data-en="We are on social media:" data-ru="Мы в соцсетях:">Ми у соцмережах:</p>
-                <ul>
-                    <li data-uk="Instagram: @ditiboga" data-en="Instagram: @ditiboga" data-ru="Instagram: @ditiboga">Instagram: @ditiboga</li>
-                    <li data-uk="Facebook: Діти Бога" data-en="Facebook: Children of God" data-ru="Facebook: Дети Бога">Facebook: Діти Бога</li>
-                </ul>
+                <div class="contact-header">
+                    <div class="photo-container">
+                        <img src="img/me.jpg" alt="me">
+                    </div>
+                    <div class="info-header">
+                        <h1 class="const-item" data-en="Alex" data-ru="Олександр" data-uk="Олександр">Олександр</h1>
+                        <br>
+                        <div class="director-title" data-en="Sound Director, Administrator" data-ru="Звуковой директор, Администратор" data-uk="Звуковий директор, Адміністратор">Звуковий директор, адміністратор</div>
+                    </div>
+                </div>
+                <p class="contact-item" data-en="Phone: +1 306 280 8898" data-ru="Телефон: +1 306 280 8898" data-uk="Телефон: +1 306 280 8898">Телефон: +1 306 280 8898</p>
+                <p class="contact-item" data-en="Email: alexhalus201006@gmail.com" data-ru="Электронная почта: alexhalus201006@gmail.com" data-uk="Електронна пошта: alexhalus201006@gmail.com">Email: alexhalus201006@gmail.com</p>
+                <p class="contact-item" data-uk="Будь ласка, з питаннями звертайтеся до адміністратора" data-en="Please contact the administrator with any questions" data-ru="Пожалуйста, по вопросам обращайтесь к администратору">Будь ласка, з питаннями звертайтеся до адміністратора</p>
+            </div>
+            
+    
+            <!-- Інші директори -->
+            <div class="directors-row">
+                <div class="director-box">
+                    <div class="photo-container">
+                        <img src="img/valya.jpg" alt="">
+                    </div>
+                    <div class="name">
+                        <h1 class="const-item" data-en="Valentyna" data-ru="Валентина" data-uk="Валентина"> Валентина</h1>
+                    </div>
+                    <br>
+                    <div class="director-title" data-en="Group Director" data-ru="Директор группы" data-uk="Директор групи">Директор групи</div>
+                    <div class="director-contact">
+                        <p class="const-item" data-en="Phone: +1 639 338 0539" data-ru="Телефон: +1 639 338 0539" data-uk="Телефон: +1 639 338 0539">Телефон: +1 639 338 0539</p>
+                        <p class="const-item" data-en="Email: vvkuznietsova@gmail.com" data-ru="Email: vvkuznietsova@gmail.com" data-uk="Email: vvkuznietsova@gmail.com">Email: vvkuznietsova@gmail.com</p>
+                    </div>
+                    
+                </div>
+                <div class="director-box">
+                    <div class="photo-container scale-alona">
+                        <img src="img/alona.jpg" alt="">
+                    </div> 
+                    <div class="name">
+                        <h1 class="const-item" data-en="Alona" data-ru="Алёна" data-uk="Альона">Альона</h1>
+                    </div>
+                    <br>
+                    <div class="director-title" data-en="Music Director" data-uk="Музичний директор" data-ru="Музыкальный директор">Музичний директор</div>
+                    <div class="director-contact">
+                        <p class="const-item" data-en="Phone: +380 50 123 45 67" data-ru="Телефон: +380 50 123 45 67" data-uk="Телефон: +380 50 123 45 67">Телефон: +380 50 123 45 67</p>
+                        <p class="const-item" data-en="Email: music@ditiboga.com" data-ru="Email: music@ditiboga.com" data-uk="Email: music@ditiboga.com">Email: music@ditiboga.com</p>
+                    </div>
+                </div>
+                
             </div>
         </div>
     </main>
@@ -127,6 +170,90 @@
             .burger {
                 display: flex;
             }
+        }
+        .directors-row {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .director-box {
+            background: rgba(0,0,0,0.4);
+            border-radius: 14px;
+            padding: 25px 35px;
+            color: #fff;
+            font-size: 1.2rem;
+            min-width: 180px;
+            text-align: center;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+        }
+        @media (max-width: 600px) {
+            .directors-row {
+                flex-direction: column;
+                gap: 15px;
+                align-items: center;
+            }
+            .director-box {
+                min-width: 120px;
+                padding: 18px 10px;
+                font-size: 1rem;
+            }
+            .contact-header {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .info-header {
+                width: 100%;
+    }
+        }
+        .director-title {
+            font-weight: bold;
+            font-size: 1.25rem;
+            margin-bottom: 10px;
+        }
+        .director-contact p {
+            margin: 4px 0;
+            font-size: 1.05rem;
+        }
+        .photo-container  {
+            width: 120px;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    margin-right: auto;
+        }
+        .photo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center center;
+        }
+        
+        .photo-container.scale-alona {
+            width: 100px; 
+            aspect-ratio: 1 / 1;
+            border-radius: 50%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .photo-container.scale-alona img {
+            width: 100%;
+            object-fit: contain;
+            object-position: center center;
+            transform: scale(1.1);
+            justify-content: center;
+        }
+        .name {
+            justify-content: center;
         }
     </style>
     <div class="burger" id="burger-menu">
