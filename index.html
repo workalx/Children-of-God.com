@@ -1,138 +1,794 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Діти Бога</title>
-    <link rel="icon" type="image/jpeg" href="img/OIP.jpeg">
-    <link rel="stylesheet" href="style.css">
-    <style>
-        .extra-content {
-            margin-bottom: 130px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title data-i18n="page_title">Children of God — Music Group</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --blue-deep:  #0a1f44;
+      --blue-mid:   #1a3a72;
+      --blue-light: #2657a8;
+      --gold:       #d4a017;
+      --gold-light: #f0c040;
+      --gold-pale:  #fdf3d0;
+      --white:      #ffffff;
+      --text-dark:  #0d1b36;
+      --text-muted: #6b7a9b;
+      --radius:     12px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Nunito', sans-serif; background: var(--white); color: var(--text-dark); }
+
+    /* ── Навігація ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(10, 31, 68, 0.96);
+      backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 5%;
+      height: 68px;
+      border-bottom: 2px solid var(--gold);
+    }
+    .nav-logo {
+      font-family: 'Playfair Display', serif;
+      color: var(--gold-light);
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-decoration: none;
+    }
+    .nav-right {
+      display: flex; align-items: center; gap: 2rem;
+    }
+    .nav-links {
+      display: flex; gap: 2rem; list-style: none;
+    }
+    .nav-links a {
+      color: var(--white);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      letter-spacing: 0.5px;
+      transition: color 0.25s;
+    }
+    .nav-links a:hover { color: var(--gold-light); }
+
+    /* ── Перемикач мов ── */
+    .lang-switcher {
+      display: flex;
+      gap: 4px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(212,160,23,0.35);
+      border-radius: 50px;
+      padding: 4px;
+    }
+    .lang-btn {
+      background: transparent;
+      border: none;
+      color: rgba(255,255,255,0.55);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 5px 12px;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      font-family: 'Nunito', sans-serif;
+    }
+    .lang-btn:hover { color: var(--white); background: rgba(255,255,255,0.1); }
+    .lang-btn.active {
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: var(--blue-deep);
+    }
+
+    /* ── Герой ── */
+    #hero {
+      min-height: 100vh;
+      background:
+        linear-gradient(160deg, rgba(10,31,68,0.88) 0%, rgba(38,87,168,0.72) 100%),
+        url('https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=1600&q=80') center/cover no-repeat;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      padding: 100px 5% 60px;
+      position: relative;
+      overflow: hidden;
+    }
+    #hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% 60%, rgba(212,160,23,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-cross { font-size: 3rem; color: var(--gold); margin-bottom: 1rem; text-shadow: 0 0 30px rgba(212,160,23,0.6); }
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.8rem, 7vw, 5.5rem);
+      font-weight: 900;
+      color: var(--white);
+      line-height: 1.1;
+      text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+    }
+    .hero-title span { color: var(--gold-light); }
+    .hero-subtitle {
+      margin-top: 1.2rem;
+      font-size: clamp(1rem, 2.5vw, 1.35rem);
+      color: rgba(255,255,255,0.85);
+      font-weight: 300;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .hero-divider {
+      margin: 2rem auto;
+      width: 80px; height: 3px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+    .hero-verse {
+      max-width: 600px;
+      font-size: 1.05rem;
+      color: rgba(255,255,255,0.8);
+      font-style: italic;
+      line-height: 1.7;
+    }
+    .hero-btn {
+      margin-top: 2.5rem;
+      display: inline-block;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: var(--blue-deep);
+      padding: 0.9rem 2.6rem;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 1rem;
+      text-decoration: none;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 20px rgba(212,160,23,0.45);
+      transition: transform 0.25s, box-shadow 0.25s;
+    }
+    .hero-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(212,160,23,0.55); }
+
+    /* ── Секції ── */
+    section { padding: 90px 5%; }
+    .section-tag {
+      display: inline-block;
+      background: var(--gold-pale);
+      color: var(--blue-mid);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 4px 14px;
+      border-radius: 50px;
+      border: 1px solid var(--gold);
+      margin-bottom: 0.8rem;
+    }
+    .section-title { font-family: 'Playfair Display', serif; font-size: clamp(1.8rem, 4vw, 2.8rem); color: var(--blue-deep); line-height: 1.2; }
+    .section-title span { color: var(--gold); }
+    .section-line { width: 60px; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); margin: 1.2rem 0 2rem; border-radius: 2px; }
+
+    /* ── Про групу ── */
+    #about { background: var(--white); }
+    .about-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+      max-width: 1200px; margin: 0 auto;
+    }
+    .about-img-wrap { position: relative; }
+    .about-badge {
+      position: absolute; bottom: -20px; right: -20px;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: var(--blue-deep);
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 16px 22px;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 20px rgba(212,160,23,0.4);
+      text-align: center;
+      line-height: 1.4;
+    }
+    .about-text p { font-size: 1.05rem; line-height: 1.85; color: #374060; margin-bottom: 1.2rem; }
+    .about-stats { display: flex; gap: 2rem; margin-top: 2rem; }
+    .stat-box { text-align: center; background: var(--gold-pale); border: 1px solid rgba(212,160,23,0.3); border-radius: var(--radius); padding: 1rem 1.5rem; }
+    .stat-num { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--blue-deep); font-weight: 700; }
+    .stat-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* ── Донейшн ── */
+    #donate { background: var(--gold-pale); }
+    #donate .section-title { color: var(--blue-deep); }
+    .donate-wrap { max-width: 860px; margin: 0 auto; text-align: center; }
+    .donate-desc { font-size: 1.05rem; color: #374060; line-height: 1.8; margin-bottom: 2.5rem; }
+    .donate-cards { display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center; margin-bottom: 2.5rem; }
+    .donate-card {
+      flex: 1; min-width: 220px; max-width: 260px;
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 2rem 1.5rem;
+      box-shadow: 0 4px 24px rgba(10,31,68,0.1);
+      border-top: 4px solid var(--gold);
+      text-align: center;
+    }
+    .donate-card-icon { font-size: 2.2rem; margin-bottom: 0.75rem; }
+    .donate-card-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--blue-deep); font-weight: 700; margin-bottom: 0.5rem; }
+    .donate-card-text { font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1.2rem; }
+    .donate-card-value { font-weight: 700; color: var(--blue-mid); font-size: 0.95rem; word-break: break-all; }
+    .donate-btn-wrap { margin-top: 1rem; }
+    .donate-main-btn {
+      display: inline-flex; align-items: center; gap: 0.6rem;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: var(--blue-deep);
+      padding: 1rem 2.8rem;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      text-decoration: none;
+      box-shadow: 0 4px 20px rgba(212,160,23,0.4);
+      transition: transform 0.25s, box-shadow 0.25s;
+      border: none; cursor: pointer;
+    }
+    .donate-main-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(212,160,23,0.55); }
+
+    /* ── Галерея ── */
+    #gallery { background: var(--white); }
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      max-width: 1200px; margin: 0 auto;
+    }
+    .gallery-item { border-radius: var(--radius); overflow: hidden; position: relative; cursor: pointer; }
+    .gallery-item:first-child { grid-column: span 2; grid-row: span 2; }
+    .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s; }
+    .gallery-item:hover img { transform: scale(1.06); }
+    .gallery-item .overlay { position: absolute; inset: 0; background: rgba(10,31,68,0.55); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
+    .gallery-item:hover .overlay { opacity: 1; }
+    .overlay span { color: var(--white); font-size: 2rem; }
+    .gallery-placeholder {
+      height: 200px;
+      background: linear-gradient(135deg, #dde6f5, #c5d5ee);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--blue-mid);
+      font-size: 2.5rem;
+      border-radius: var(--radius);
+    }
+    .gallery-item:first-child .gallery-placeholder { height: 100%; min-height: 416px; flex-direction: column; gap: 0.5rem; }
+
+    /* ── Відео ── */
+    #videos { background: var(--blue-deep); }
+    #videos .section-tag { background: rgba(212,160,23,0.15); color: var(--gold-light); border-color: var(--gold); }
+    #videos .section-title { color: var(--white); }
+    #videos .section-title span { color: var(--gold-light); }
+    #videos .section-line { background: linear-gradient(90deg, var(--gold), transparent); }
+    .videos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; max-width: 1200px; margin: 0 auto; }
+    .video-card { border-radius: var(--radius); overflow: hidden; background: rgba(255,255,255,0.05); border: 1px solid rgba(212,160,23,0.2); }
+    .video-card iframe { width: 100%; height: 220px; display: block; border: none; }
+    .video-placeholder { width: 100%; height: 220px; background: rgba(255,255,255,0.06); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; color: rgba(255,255,255,0.5); }
+    .video-placeholder .play-btn { width: 60px; height: 60px; border-radius: 50%; background: rgba(212,160,23,0.25); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; }
+    .video-placeholder p { font-size: 0.9rem; }
+    .video-info { padding: 1rem 1.2rem 1.4rem; }
+    .video-title { color: var(--white); font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
+    .video-date { color: rgba(255,255,255,0.45); font-size: 0.82rem; }
+    .video-cta { margin-top: 3rem; text-align: center; }
+    .video-cta a {
+      display: inline-flex; align-items: center; gap: 0.6rem;
+      background: #ff0000; color: var(--white);
+      padding: 0.85rem 2rem; border-radius: 50px;
+      font-weight: 700; text-decoration: none; font-size: 1rem;
+      transition: transform 0.25s, box-shadow 0.25s;
+      box-shadow: 0 4px 20px rgba(255,0,0,0.3);
+    }
+    .video-cta a:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(255,0,0,0.45); }
+
+    /* ── Контакти ── */
+    #contact { background: #f0f4fc; }
+    .contact-wrap { max-width: 800px; margin: 0 auto; text-align: center; }
+    .contact-cards { display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center; margin-top: 2.5rem; }
+    .contact-card { flex: 1; min-width: 200px; background: var(--white); border-radius: var(--radius); padding: 2rem 1.5rem; box-shadow: 0 4px 20px rgba(10,31,68,0.08); border-top: 3px solid var(--gold); }
+    .contact-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+    .contact-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 0.4rem; }
+    .contact-value { font-weight: 700; color: var(--blue-deep); font-size: 1rem; word-break: break-all; }
+    .contact-value a { color: var(--blue-mid); text-decoration: none; }
+    .contact-value a:hover { color: var(--gold); }
+
+    /* ── Футер ── */
+    footer { background: var(--blue-deep); border-top: 2px solid var(--gold); padding: 2.5rem 5%; text-align: center; color: rgba(255,255,255,0.55); font-size: 0.9rem; }
+    footer strong { color: var(--gold-light); }
+
+    /* ── Модальне вікно ── */
+    #donateModal { display: none; }
+    #donateModal.open { display: flex !important; }
+    @keyframes modalIn { from { opacity:0; transform:scale(0.9) translateY(20px); } to { opacity:1; transform:scale(1) translateY(0); } }
+    #donateModal.open > div { animation: modalIn 0.3s ease; }
+
+    /* ── Анімація перемикання мов ── */
+    .lang-fade { animation: langFade 0.3s ease; }
+    @keyframes langFade { from { opacity: 0.3; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── Адаптив ── */
+    @media (max-width: 768px) {
+      nav { padding: 0 4%; }
+      .nav-links { gap: 1.2rem; }
+      .nav-links a { font-size: 0.85rem; }
+      .about-wrap { grid-template-columns: 1fr; gap: 2rem; }
+      .about-badge { position: static; margin-top: 1rem; display: inline-block; }
+      .gallery-grid { grid-template-columns: 1fr 1fr; }
+      .gallery-item:first-child { grid-column: span 2; }
+      .about-stats { flex-wrap: wrap; }
+    }
+    @media (max-width: 520px) {
+      .nav-links { display: none; }
+      .gallery-grid { grid-template-columns: 1fr; }
+      .gallery-item:first-child { grid-column: span 1; }
+    }
+  </style>
 </head>
 <body>
-    <header>
-        <nav>
-            <div class="logo">
-                <img src="img/C__1.png" alt="ДБ" class="logo-uk">
-                <img src="img/C1.jpg" alt="COG" class="logo-en" style="display: none;">
-                <img src="img/C1-removebg-preview (1).png" alt="COG White" class="logo-en-white" style="display: none;">
-            </div>
-            <div class="nav-links">
-                <a href="contact.html" data-uk="Зв'язатися з нами" data-en="Contact Us" data-ru="Связаться с нами">Зв'язатися з нами</a>
-                <a href="#about" data-uk="Про нас" data-en="About Us" data-ru="О нас">Про нас</a>
-                <a href="#media" data-uk="Наша медія" data-en="Our Media" data-ru="Наша медиа">Наша медія</a>
-                <button class="lang-btn" onclick="toggleLanguage()" data-uk="Мова" data-en="Language" data-ru="Язык">Мова</button> 
-            </div>
-        </nav>
-    </header>
 
-    <main>
-            <div class="hero" id="hero">
-            <h1 class="main-title animate-on-scroll" data-uk="Ласкаво просимо на сайт &quot;Діти Бога&quot;" 
-                data-en="Welcome to &quot;Children of God&quot;"
-                data-ru="Добро пожаловать на сайт &quot;Дети Бога&quot;">Ласкаво просимо на сайт "Діти Бога"</h1>
-            
-            <div class="content-box animate-on-scroll" id="about">
-            
-                <h2 class="subtitle" data-uk="&quot;Діти Бога&quot; – музична християнська дитяча група"
-                    data-en="&quot;Children of God&quot; – Christian children's music group"
-                    data-ru="&quot;Дети Бога&quot; – музыкальная христианская детская группа">"Діти Бога" – музична християниська дитяча група</h2>
-                
-                <p class="description" data-uk="&quot;Діти Божі&quot; – це дружня команда дітей, які через музику діляться любов'ю, радістю та світлом Божого слова. Учасники групи виконують натхненні християниські пісні, що вчать добру, милосердю та вірі. Їхні виступи – це справжнє свято, де звучать щирі голоси, теплі посмішки та любов до Бога. Місія &quot;Дітей Божих&quot; – дарувати надію та нагадувати кожному, що світло Христове завжди поруч."
-                    data-en="&quot;Children of God&quot; is a friendly team of children who share love, joy and the light of God's word through music. Group members perform inspired Christian songs that teach goodness, mercy and faith. Their performances are a real celebration where sincere voices, warm smiles and love for God sound. The mission of &quot;Children of God&quot; is to give hope and remind everyone that Christ's light is always near."
-                    data-ru="&quot;Дети Божьи&quot; – это дружная команда детей, которые через музыку делятся любовью, радостью и светом Божьего слова. Участники группы исполняют вдохновенные христианские песни, которые учат добру, милосердию и вере. Их выступления – это настоящий праздник, где звучат искренние голоса, теплые улыбки и любовь к Богу. Миссия &quot;Детей Божьих&quot; – дарить надежду и напоминать каждому, что свет Христов всегда рядом.">"Діти Божі" – це дружня команда дітей, які через музику діляться любов'ю, радістю та світлом Божого слова. Учасники групи виконують натхненні християниські пісні, що вчать добру, милосердю та вірі. Їхні виступи – це справжнє свято, де звучать щирі голоси, теплі посмішки та любов до Бога. Місія "Дітей Божих" – дарувати надію та нагадувати кожному, що світло Христове завжди поруч.</p>
-            </div>
-        </div>
-        <div class="split-block-container animate-on-scroll" id="media">
-            <div class="split-left">
-                <div class="split-left-text" data-uk="Наша медія" data-en="Our Media" data-ru="Наша медиа">Наша медія</div>
-            </div>
-            <div class="split-right">
-                <div class="block" onclick="openModal('videoModal')">
-                    <img src="img/fon2.jpg" alt="Відео">
-                    <div class="block-text" data-uk="Відео" data-en="Video" data-ru="Видео">Відео</div>
-                </div>
-                <div class="block" onclick="openModal('songsModal')">
-                    <img src="img/fon3.jpg" alt="Пісні">
-                    <div class="block-text" data-uk="Пісні" data-en="Songs" data-ru="Песни">Пісні</div>
-                </div>
-                <div class="block" onclick="openModal('photoModal')">
-                    <img src="img/fon4.jpg" alt="Фото">
-                    <div class="block-text" data-uk="Фото" data-en="Photo" data-ru="Фото">Фото</div>
-                </div>
-            </div>
-            <div class="split-diagonal"></div>
-        </div>
-    </main>
+<!-- ── НАВІГАЦІЯ ── -->
+<nav>
+  <a class="nav-logo" href="#hero" data-i18n="nav_logo">✝ Children of God</a>
+  <div class="nav-right">
+    <ul class="nav-links">
+      <li><a href="#about"   data-i18n="nav_about">Про нас</a></li>
+      <li><a href="#gallery" data-i18n="nav_gallery">Фото</a></li>
+      <li><a href="#videos"  data-i18n="nav_videos">Відео</a></li>
+      <li><a href="#donate"  data-i18n="nav_donate">Донат</a></li>
+      <li><a href="#contact" data-i18n="nav_contact">Контакти</a></li>
+    </ul>
+    <!-- Перемикач мов -->
+    <div class="lang-switcher">
+      <button class="lang-btn active" data-lang="uk">UA</button>
+      <button class="lang-btn" data-lang="en">EN</button>
+      <button class="lang-btn" data-lang="ru">RU</button>
+    </div>
+  </div>
+</nav>
 
-    <!-- Модальні вікна -->
-    <div id="videoModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('videoModal')">&times;</span>
-           
-            <div class="modal-inner-block" data-uk="Блок 1" data-en="Block 1" data-ru="Блок 1">Блок 1</div>
-            <div class="modal-inner-block" data-uk="Блок 2" data-en="Block 2" data-ru="Блок 2">Блок 2</div>
-            <div class="modal-inner-block" data-uk="Блок 3" data-en="Block 3" data-ru="Блок 3">Блок 3</div>
-            <div class="modal-inner-block" data-uk="Блок 4" data-en="Block 4" data-ru="Блок 4">Блок 4</div>
-            <div class="modal-inner-block" data-uk="Блок 5" data-en="Block 5" data-ru="Блок 5">Блок 5</div>
-            <div class="modal-inner-block" data-uk="Блок 6" data-en="Block 6" data-ru="Блок 6">Блок 6</div>
-        </div>
+<!-- ── ГЕРОЙ ── -->
+<section id="hero">
+  <div class="hero-cross">✝</div>
+  <h1 class="hero-title" data-i18n="hero_title">Children of <span>God</span></h1>
+  <p class="hero-subtitle" data-i18n="hero_subtitle">Музична Група · Хрис­тиян­ська Музика</p>
+  <div class="hero-divider"></div>
+  <p class="hero-verse" data-i18n="hero_verse">
+    «Співайте Господеві нову пісню, хвала Його у зборах вірних.»<br><small>— Псалом 149:1</small>
+  </p>
+  <a href="#about" class="hero-btn" data-i18n="hero_btn">Дізнатись більше ↓</a>
+</section>
+
+<!-- ── ПРО ГРУПУ ── -->
+<section id="about">
+  <div class="about-wrap">
+    <div class="about-img-wrap">
+      <div style="height:380px;border-radius:12px;overflow:hidden;background:linear-gradient(135deg,#1a3a72,#2657a8);display:flex;align-items:center;justify-content:center;">
+        <span style="font-size:6rem;opacity:0.4;">🎵</span>
+      </div>
+      <div class="about-badge" data-i18n="about_badge">🎶 Слава<br>Господу!</div>
+    </div>
+    <div class="about-text">
+      <span class="section-tag" data-i18n="about_tag">Про нас</span>
+      <h2 class="section-title" data-i18n="about_title">Ми — <span>Діти Божі</span></h2>
+      <div class="section-line"></div>
+      <p data-i18n="about_p1">«Діти Божі» — музична група, що несе слово Боже через пісню та хвалу. Наша місія — торкатись сердець людей, надихати на молитву і прославляти Господа щирою, живою музикою.</p>
+      <p data-i18n="about_p2">Ми виступаємо на богослужіннях, концертах, фестивалях і зустрічах, поєднуючи сучасні аранжування з глибокими духовними текстами. Кожна пісня — це молитва, що звучить від серця до неба.</p>
+      <div class="about-stats">
+        <div class="stat-box"><div class="stat-num">5+</div><div class="stat-label" data-i18n="stat_members">Учасників</div></div>
+        <div class="stat-box"><div class="stat-num">50+</div><div class="stat-label" data-i18n="stat_concerts">Концертів</div></div>
+        <div class="stat-box"><div class="stat-num">2020</div><div class="stat-label" data-i18n="stat_year">Рік заснування</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── ДОНЕЙШН ── -->
+<section id="donate">
+  <div class="donate-wrap">
+    <span class="section-tag" data-i18n="donate_tag">Підтримка</span>
+    <h2 class="section-title" data-i18n="donate_title">Підтримайте <span>Наше Служіння</span></h2>
+    <div class="section-line" style="margin-left:auto;margin-right:auto;"></div>
+    <p class="donate-desc" data-i18n="donate_desc">Ваша підтримка допомагає нам створювати нові пісні, записувати альбоми та нести Слово Боже далі. Кожна пожертва — це внесок у Боже Царство. Дякуємо!</p>
+    <div class="donate-cards">
+      <div class="donate-card">
+        <div class="donate-card-icon">🌐</div>
+        <div class="donate-card-title" data-i18n="donate_card2_title">PayPal</div>
+        <div class="donate-card-text" data-i18n="donate_card2_text">Міжнародний переказ через PayPal</div>
+        <div class="donate-card-value"><a href="https://paypal.me/" target="_blank" style="color:var(--blue-mid);text-decoration:none;">paypal.me/ditibozhii</a></div>
+      </div>
+      <div class="donate-card">
+        <div class="donate-card-icon">🍁</div>
+        <div class="donate-card-title" data-i18n="donate_card4_title">Interac e-Transfer</div>
+        <div class="donate-card-text" data-i18n="donate_card4_text">Переказ через Interac (Канада)</div>
+        <div class="donate-card-value"><a href="#" onclick="openDonateModal();return false;" style="color:var(--blue-mid);text-decoration:none;" data-i18n="donate_see_email">Побачити email ↓</a></div>
+      </div>
+    </div>
+    <div class="donate-btn-wrap">
+      <button onclick="openDonateModal()" class="donate-main-btn" data-i18n="donate_btn">
+        ❤️ Підтримати зараз
+      </button>
     </div>
 
-    <div id="songsModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('songsModal')">&times;</span>
-            
-            <div class="modal-inner-block" data-uk="Блок 1" data-en="Block 1" data-ru="Блок 1">Блок 1</div>
-            <div class="modal-inner-block" data-uk="Блок 2" data-en="Block 2" data-ru="Блок 2">Блок 2</div>
-            <div class="modal-inner-block" data-uk="Блок 3" data-en="Block 3" data-ru="Блок 3">Блок 3</div>
-            <div class="modal-inner-block" data-uk="Блок 4" data-en="Block 4" data-ru="Блок 4">Блок 4</div>
-            <div class="modal-inner-block" data-uk="Блок 5" data-en="Block 5" data-ru="Блок 5">Блок 5</div>
-            <div class="modal-inner-block" data-uk="Блок 6" data-en="Block 6" data-ru="Блок 6">Блок 6</div>
+    <!-- Модальне вікно з email -->
+    <div id="donateModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(10,31,68,0.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+      <div style="background:var(--white);border-radius:20px;padding:2.5rem 2rem;max-width:440px;width:90%;text-align:center;position:relative;box-shadow:0 20px 60px rgba(10,31,68,0.3);border-top:5px solid var(--gold);">
+        <button onclick="closeDonateModal()" style="position:absolute;top:1rem;right:1.2rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">✕</button>
+        <div style="font-size:3rem;margin-bottom:1rem;">❤️</div>
+        <h3 style="font-family:'Playfair Display',serif;color:var(--blue-deep);font-size:1.5rem;margin-bottom:0.5rem;" data-i18n="modal_title">Дякуємо за підтримку!</h3>
+        <p style="color:var(--text-muted);font-size:0.95rem;margin-bottom:1.8rem;" data-i18n="modal_desc">Надішліть свій донат на один із цих email:</p>
+        <div style="background:var(--gold-pale);border:1px solid rgba(212,160,23,0.4);border-radius:12px;padding:1rem 1.5rem;margin-bottom:1rem;">
+          <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:4px;">PayPal</div>
+          <div style="font-weight:700;color:var(--blue-deep);font-size:1.1rem;word-break:break-all;">donate@ditibozhii.com</div>
         </div>
-    </div>
-
-    <div id="photoModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('photoModal')">&times;</span>
-            
-            <div class="modal-inner-block" data-uk="Блок 1" data-en="Block 1" data-ru="Блок 1">Блок 1</div>
-            <div class="modal-inner-block" data-uk="Блок 2" data-en="Block 2" data-ru="Блок 2">Блок 2</div>
-            <div class="modal-inner-block" data-uk="Блок 3" data-en="Block 3" data-ru="Блок 3">Блок 3</div>
-            <div class="modal-inner-block" data-uk="Блок 4" data-en="Block 4" data-ru="Блок 4">Блок 4</div>
-            <div class="modal-inner-block" data-uk="Блок 5" data-en="Block 5" data-ru="Блок 5">Блок 5</div>
-            <div class="modal-inner-block" data-uk="Блок 6" data-en="Block 6" data-ru="Блок 6">Блок 6</div>
+        <div style="background:var(--gold-pale);border:1px solid rgba(212,160,23,0.4);border-radius:12px;padding:1rem 1.5rem;margin-bottom:1.8rem;">
+          <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:4px;">Interac e-Transfer</div>
+          <div style="font-weight:700;color:var(--blue-deep);font-size:1.1rem;word-break:break-all;">donate@ditibozhii.com</div>
         </div>
+        <p style="font-size:0.85rem;color:var(--text-muted);" data-i18n="modal_thanks">Нехай Господь благословить вас за кожну підтримку! 🙏</p>
+      </div>
     </div>
+  </div>
+</section>
 
-    <div class="burger" id="burger-menu">
-        <span></span>
-        <span></span>
-        <span></span>
+<!-- ── ГАЛЕРЕЯ ── -->
+<section id="gallery">
+  <div style="max-width:1200px;margin:0 auto 2rem;">
+    <span class="section-tag" data-i18n="gallery_tag">Фотографії</span>
+    <h2 class="section-title" data-i18n="gallery_title">Наша <span>Галерея</span></h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="gallery-grid" style="max-width:1200px;margin:0 auto;">
+    <div class="gallery-item">
+      <div class="gallery-placeholder" style="height:100%;min-height:416px;flex-direction:column;gap:0.5rem;">
+        <span>📸</span>
+        <p style="font-size:0.9rem;opacity:0.7;" data-i18n="gallery_main">Головне фото</p>
+      </div>
+      <div class="overlay"><span>🔍</span></div>
     </div>
-    <div class="mobile-nav" id="mobileNav">
-        <a href="index.html" data-uk="Головна" data-en="Home" data-ru="Главная">Головна</a>
-        <a href="#about" data-uk="Про нас" data-en="About Us" data-ru="О нас">Про нас</a>
-        <a href="contact.html" data-uk="Зв'язатися з нами" data-en="Contact Us" data-ru="Связаться с нами">Зв'язатися з нами</a>
-        <a href="#media" data-uk="Наша медія" data-en="Our Media" data-ru="Наша медиа">Наша медія</a>
-        <button class="lang-btn" onclick="toggleLanguage()" data-uk="Мова" data-en="Language" data-ru="Язык">Мова</button>
-    </div>
+    <div class="gallery-item"><div class="gallery-placeholder">📸</div><div class="overlay"><span>🔍</span></div></div>
+    <div class="gallery-item"><div class="gallery-placeholder">📸</div><div class="overlay"><span>🔍</span></div></div>
+    <div class="gallery-item"><div class="gallery-placeholder">📸</div><div class="overlay"><span>🔍</span></div></div>
+    <div class="gallery-item"><div class="gallery-placeholder">📸</div><div class="overlay"><span>🔍</span></div></div>
+  </div>
+  <p style="text-align:center;margin-top:2rem;color:var(--text-muted);font-size:0.92rem;" data-i18n="gallery_hint">
+    📷 Замініть плейсхолдери на справжні фото — просто скажи мені!
+  </p>
+</section>
 
-    <script src="script.js"></script>
-    <script>
-    // Мобільне меню бургер
-    const burger = document.getElementById('burger-menu');
-    const mobileNav = document.getElementById('mobileNav');
-    burger.addEventListener('click', function() {
-        mobileNav.classList.toggle('active');
-    });
-    // Закриття меню при кліку на посилання або кнопку
-    mobileNav.querySelectorAll('a,button').forEach(el => {
-        el.addEventListener('click', () => mobileNav.classList.remove('active'));
-    });
-    </script>
+<!-- ── ВІДЕО ── -->
+<section id="videos">
+  <div style="max-width:1200px;margin:0 auto 2.5rem;">
+    <span class="section-tag" data-i18n="videos_tag">YouTube</span>
+    <h2 class="section-title" data-i18n="videos_title">Наші <span>Відео</span></h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="videos-grid">
+    <div class="video-card">
+      <div class="video-placeholder"><div class="play-btn">▶</div><p data-i18n="video_soon">Відео буде додано незабаром</p></div>
+      <div class="video-info"><div class="video-title" data-i18n="video1_title">Пісня хвали #1</div><div class="video-date">📅 <span data-i18n="soon">Скоро</span></div></div>
+    </div>
+    <div class="video-card">
+      <div class="video-placeholder"><div class="play-btn">▶</div><p data-i18n="video_soon">Відео буде додано незабаром</p></div>
+      <div class="video-info"><div class="video-title" data-i18n="video2_title">Пісня хвали #2</div><div class="video-date">📅 <span data-i18n="soon">Скоро</span></div></div>
+    </div>
+    <div class="video-card">
+      <div class="video-placeholder"><div class="play-btn">▶</div><p data-i18n="video_soon">Відео буде додано незабаром</p></div>
+      <div class="video-info"><div class="video-title" data-i18n="video3_title">Концертне виступлення</div><div class="video-date">📅 <span data-i18n="soon">Скоро</span></div></div>
+    </div>
+  </div>
+  <div class="video-cta">
+    <a href="#" target="_blank" data-i18n="yt_btn">▶ Наш канал на YouTube</a>
+  </div>
+</section>
+
+<!-- ── КОНТАКТИ ── -->
+<section id="contact">
+  <div class="contact-wrap">
+    <span class="section-tag" data-i18n="contact_tag">Зв'язок</span>
+    <h2 class="section-title" data-i18n="contact_title">Зв'яжіться з <span>Нами</span></h2>
+    <div class="section-line" style="margin-left:auto;margin-right:auto;"></div>
+    <p style="color:var(--text-muted);font-size:1rem;" data-i18n="contact_desc">Запрошуємо на виступи, богослужіння та спільну молитву. Пишіть нам — відповімо з радістю!</p>
+    <div class="contact-cards">
+      <div class="contact-card">
+        <div class="contact-icon">📧</div>
+        <div class="contact-label" data-i18n="contact_email_label">Email</div>
+        <div class="contact-value"><a href="mailto:info@ditibozhii.ua">info@ditibozhii.ua</a></div>
+      </div>
+      <div class="contact-card">
+        <div class="contact-icon">▶️</div>
+        <div class="contact-label" data-i18n="contact_social_label">YouTube</div>
+        <div class="contact-value"><a href="https://youtube.com/" target="_blank" data-i18n="contact_yt_value">Наш канал</a></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── ФУТЕР ── -->
+<footer>
+  <p data-i18n="footer">© 2026 <strong>Діти Божі</strong> — Музична група. Слава Богу за кожну пісню. ✝</p>
+</footer>
+
+<!-- ══════════════════════════════════════
+     ПЕРЕКЛАДИ ТА ПЕРЕМИКАЧ МОВ
+════════════════════════════════════════ -->
+<script>
+window.i18n = {
+  uk: {
+    page_title:          'Діти Божі — Музична Група',
+    nav_logo:            '✝ Діти Божі',
+    hero_title:          'Діти <span>Божі</span>',
+    nav_about:           'Про нас',
+    nav_catalog:         'Учасники',
+    nav_gallery:         'Фото',
+    nav_videos:          'Відео',
+    nav_contact:         'Контакти',
+
+    hero_subtitle:       'Музична Група · Хрис­тиян­ська Музика',
+    hero_verse:          '«Співайте Господеві нову пісню, хвала Його у зборах вірних.»<br><small>— Псалом 149:1</small>',
+    hero_btn:            'Дізнатись більше ↓',
+
+    about_tag:           'Про нас',
+    about_title:         'Ми — <span>Діти Божі</span>',
+    about_badge:         '🎶 Слава<br>Господу!',
+    about_p1:            '«Діти Божі» — музична група, що несе слово Боже через пісню та хвалу. Наша місія — торкатись сердець людей, надихати на молитву і прославляти Господа щирою, живою музикою.',
+    about_p2:            'Ми виступаємо на богослужіннях, концертах, фестивалях і зустрічах, поєднуючи сучасні аранжування з глибокими духовними текстами. Кожна пісня — це молитва, що звучить від серця до неба.',
+    stat_members:        'Учасників',
+    stat_concerts:       'Концертів',
+    stat_year:           'Рік заснування',
+
+    catalog_tag:         'Каталог',
+    catalog_title:       'Наші <span>Учасники</span>',
+    m1_name: "Ім'я Учасника", m1_role: 'Вокал',   m1_desc: 'Голос групи, натхнення команди та серце колективу.',
+    m2_name: "Ім'я Учасника", m2_role: 'Гітара',  m2_desc: 'Майстер акордів, що надає музиці глибину та силу.',
+    m3_name: "Ім'я Учасника", m3_role: 'Клавіші', m3_desc: 'Ніжні мелодії, що зворушують до сліз молитви.',
+    m4_name: "Ім'я Учасника", m4_role: 'Ударні',  m4_desc: 'Ритм, що тримає групу разом у кожній пісні.',
+    join_btn:            'Долучитись до групи',
+    join_alert:          'Зв\'яжіться з нами, щоб долучитись!',
+
+    gallery_tag:         'Фотографії',
+    gallery_title:       'Наша <span>Галерея</span>',
+    gallery_main:        'Головне фото',
+    gallery_hint:        '📷 Замініть плейсхолдери на справжні фото — просто скажи мені!',
+
+    videos_tag:          'YouTube',
+    videos_title:        'Наші <span>Відео</span>',
+    video_soon:          'Відео буде додано незабаром',
+    video1_title:        'Пісня хвали #1',
+    video2_title:        'Пісня хвали #2',
+    video3_title:        'Концертне виступлення',
+    soon:                'Скоро',
+    yt_btn:              '▶ Наш канал на YouTube',
+
+    donate_tag:           'Підтримка',
+    donate_title:         'Підтримайте <span>Наше Служіння</span>',
+    donate_desc:          'Ваша підтримка допомагає нам створювати нові пісні, записувати альбоми та нести Слово Боже далі. Кожна пожертва — це внесок у Боже Царство. Дякуємо!',
+    donate_card2_title:   'PayPal',
+    donate_card2_text:    'Міжнародний переказ через PayPal',
+    donate_card4_title:   'Interac e-Transfer',
+    donate_card4_text:    'Переказ через Interac (Канада)',
+    donate_see_email:     'Побачити email ↓',
+    donate_btn:           '❤️ Підтримати зараз',
+    nav_donate:           'Донат',
+    modal_title:          'Дякуємо за підтримку!',
+    modal_desc:           'Надішліть свій донат на один із цих email:',
+    modal_thanks:         'Нехай Господь благословить вас за кожну підтримку! 🙏',
+
+    contact_tag:         'Зв\'язок',
+    contact_title:       'Зв\'яжіться з <span>Нами</span>',
+    contact_desc:        'Запрошуємо на виступи, богослужіння та спільну молитву. Пишіть нам — відповімо з радістю!',
+    contact_email_label: 'Email',
+    contact_social_label:'YouTube',
+    contact_yt_value:    'Наш канал',
+
+    footer: '© 2026 <strong>Діти Божі</strong> — Музична група. Слава Богу за кожну пісню. ✝'
+  },
+
+  en: {
+    page_title:          'Children of God — Music Group',
+    nav_logo:            '✝ Children of God',
+    hero_title:          'Children of <span>God</span>',
+    nav_about:           'About',
+    nav_catalog:         'Members',
+    nav_gallery:         'Photos',
+    nav_videos:          'Videos',
+    nav_contact:         'Contact',
+
+    hero_subtitle:       'Music Group · Christian Music',
+    hero_verse:          '"Sing to the Lord a new song, His praise in the assembly of the faithful."<br><small>— Psalm 149:1</small>',
+    hero_btn:            'Learn more ↓',
+
+    about_tag:           'About Us',
+    about_title:         'We are <span>Children of God</span>',
+    about_badge:         '🎶 Glory<br>to God!',
+    about_p1:            '"Children of God" is a music group that carries the Word of God through song and praise. Our mission is to touch people\'s hearts, inspire prayer, and glorify the Lord through sincere, living music.',
+    about_p2:            'We perform at church services, concerts, festivals and gatherings, combining modern arrangements with deep spiritual texts. Every song is a prayer that rises from the heart to heaven.',
+    stat_members:        'Members',
+    stat_concerts:       'Concerts',
+    stat_year:           'Founded',
+
+    catalog_tag:         'Catalog',
+    catalog_title:       'Our <span>Members</span>',
+    m1_name: 'Member Name', m1_role: 'Vocals',   m1_desc: 'The voice of the group, the team\'s inspiration and the heart of the collective.',
+    m2_name: 'Member Name', m2_role: 'Guitar',   m2_desc: 'Master of chords that gives music depth and strength.',
+    m3_name: 'Member Name', m3_role: 'Keys',     m3_desc: 'Gentle melodies that move the soul to prayerful tears.',
+    m4_name: 'Member Name', m4_role: 'Drums',    m4_desc: 'The rhythm that holds the group together in every song.',
+    join_btn:            'Join the group',
+    join_alert:          'Contact us to join!',
+
+    gallery_tag:         'Photos',
+    gallery_title:       'Our <span>Gallery</span>',
+    gallery_main:        'Main photo',
+    gallery_hint:        '📷 Replace the placeholders with real photos — just tell me!',
+
+    videos_tag:          'YouTube',
+    videos_title:        'Our <span>Videos</span>',
+    video_soon:          'Video coming soon',
+    video1_title:        'Praise Song #1',
+    video2_title:        'Praise Song #2',
+    video3_title:        'Concert Performance',
+    soon:                'Coming soon',
+    yt_btn:              '▶ Our YouTube Channel',
+
+    donate_tag:           'Support',
+    donate_title:         'Support <span>Our Ministry</span>',
+    donate_desc:          'Your support helps us create new songs, record albums, and spread the Word of God further. Every donation is a contribution to God\'s Kingdom. Thank you!',
+    donate_card2_title:   'PayPal',
+    donate_card2_text:    'International transfer via PayPal',
+    donate_card4_title:   'Interac e-Transfer',
+    donate_card4_text:    'Transfer via Interac (Canada)',
+    donate_see_email:     'See email ↓',
+    donate_btn:           '❤️ Donate Now',
+    nav_donate:           'Donate',
+    modal_title:          'Thank you for your support!',
+    modal_desc:           'Send your donation to one of these emails:',
+    modal_thanks:         'May God bless you for every contribution! 🙏',
+
+    contact_tag:         'Contact',
+    contact_title:       'Get in <span>Touch</span>',
+    contact_desc:        'We welcome invitations to performances, services, and prayer gatherings. Write to us — we\'ll respond with joy!',
+    contact_email_label: 'Email',
+    contact_social_label:'YouTube',
+    contact_yt_value:    'Our Channel',
+
+    footer: '© 2026 <strong>Children of God</strong> — Music Group. Glory to God for every song. ✝'
+  },
+
+  ru: {
+    page_title:          'Дети Божьи — Музыкальная Группа',
+    nav_logo:            '✝ Дети Божьи',
+    hero_title:          'Дети <span>Божьи</span>',
+    nav_about:           'О нас',
+    nav_catalog:         'Участники',
+    nav_gallery:         'Фото',
+    nav_videos:          'Видео',
+    nav_contact:         'Контакты',
+
+    hero_subtitle:       'Музыкальная Группа · Христианская Музыка',
+    hero_verse:          '«Пойте Господу новую песнь, хвала Ему в собрании святых.»<br><small>— Псалом 149:1</small>',
+    hero_btn:            'Узнать больше ↓',
+
+    about_tag:           'О нас',
+    about_title:         'Мы — <span>Дети Божьи</span>',
+    about_badge:         '🎶 Слава<br>Господу!',
+    about_p1:            '«Дети Божьи» — музыкальная группа, несущая Слово Божье через песню и хвалу. Наша миссия — касаться сердец людей, вдохновлять на молитву и прославлять Господа искренней, живой музыкой.',
+    about_p2:            'Мы выступаем на богослужениях, концертах, фестивалях и встречах, сочетая современные аранжировки с глубокими духовными текстами. Каждая песня — это молитва, звучащая от сердца к небу.',
+    stat_members:        'Участников',
+    stat_concerts:       'Концертов',
+    stat_year:           'Год основания',
+
+    catalog_tag:         'Каталог',
+    catalog_title:       'Наши <span>Участники</span>',
+    m1_name: 'Имя Участника', m1_role: 'Вокал',    m1_desc: 'Голос группы, вдохновение команды и сердце коллектива.',
+    m2_name: 'Имя Участника', m2_role: 'Гитара',   m2_desc: 'Мастер аккордов, придающий музыке глубину и силу.',
+    m3_name: 'Имя Участника', m3_role: 'Клавиши',  m3_desc: 'Нежные мелодии, трогающие душу до молитвенных слёз.',
+    m4_name: 'Имя Участника', m4_role: 'Ударные',  m4_desc: 'Ритм, удерживающий группу вместе в каждой песне.',
+    join_btn:            'Присоединиться к группе',
+    join_alert:          'Свяжитесь с нами, чтобы присоединиться!',
+
+    gallery_tag:         'Фотографии',
+    gallery_title:       'Наша <span>Галерея</span>',
+    gallery_main:        'Главное фото',
+    gallery_hint:        '📷 Замените заглушки реальными фото — просто скажи мне!',
+
+    videos_tag:          'YouTube',
+    videos_title:        'Наши <span>Видео</span>',
+    video_soon:          'Видео будет добавлено скоро',
+    video1_title:        'Песня хвалы #1',
+    video2_title:        'Песня хвалы #2',
+    video3_title:        'Концертное выступление',
+    soon:                'Скоро',
+    yt_btn:              '▶ Наш канал на YouTube',
+
+    donate_tag:           'Поддержка',
+    donate_title:         'Поддержите <span>Наше Служение</span>',
+    donate_desc:          'Ваша поддержка помогает нам создавать новые песни, записывать альбомы и нести Слово Божье дальше. Каждое пожертвование — вклад в Царство Божье. Спасибо!',
+    donate_card2_title:   'PayPal',
+    donate_card2_text:    'Международный перевод через PayPal',
+    donate_card4_title:   'Interac e-Transfer',
+    donate_card4_text:    'Перевод через Interac (Канада)',
+    donate_see_email:     'Посмотреть email ↓',
+    donate_btn:           '❤️ Поддержать сейчас',
+    nav_donate:           'Донат',
+    modal_title:          'Спасибо за поддержку!',
+    modal_desc:           'Отправьте ваше пожертвование на один из этих email:',
+    modal_thanks:         'Пусть Господь благословит вас за каждую поддержку! 🙏',
+
+    contact_tag:         'Контакты',
+    contact_title:       'Свяжитесь с <span>Нами</span>',
+    contact_desc:        'Приглашаем на выступления, богослужения и совместную молитву. Пишите нам — ответим с радостью!',
+    contact_email_label: 'Email',
+    contact_social_label:'YouTube',
+    contact_yt_value:    'Наш канал',
+
+    footer: '© 2026 <strong>Дети Божьи</strong> — Музыкальная группа. Слава Богу за каждую песню. ✝'
+  }
+};
+
+window.currentLang = 'en';
+
+function applyLang(lang) {
+  const t = window.i18n[lang];
+  if (!t) return;
+  window.currentLang = lang;
+
+  // Оновлюємо всі елементи з data-i18n
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key] !== undefined) {
+      if (el.tagName === 'TITLE') {
+        el.textContent = t[key].replace(/<[^>]*>/g, '');
+      } else {
+        el.innerHTML = t[key];
+      }
+    }
+  });
+
+  // Анімація
+  document.body.classList.remove('lang-fade');
+  void document.body.offsetWidth; // reflow
+  document.body.classList.add('lang-fade');
+
+  // Активна кнопка
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === lang);
+  });
+
+  // Атрибут lang для доступності
+  document.documentElement.lang = lang === 'uk' ? 'uk' : lang === 'en' ? 'en' : 'ru';
+
+  // Зберігаємо вибір
+  try { localStorage.setItem('ditibozhi_lang', lang); } catch(e) {}
+}
+
+// ── Модальне вікно донату ──
+function openDonateModal() {
+  document.getElementById('donateModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeDonateModal() {
+  document.getElementById('donateModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.getElementById('donateModal').addEventListener('click', function(e) {
+  if (e.target === this) closeDonateModal();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeDonateModal();
+});
+
+// Вішаємо обробники на кнопки
+document.querySelectorAll('.lang-btn').forEach(btn => {
+  btn.addEventListener('click', () => applyLang(btn.dataset.lang));
+});
+
+// Відновлюємо мову після перезавантаження, або запускаємо англійською
+try {
+  const saved = localStorage.getItem('ditibozhi_lang');
+  applyLang(saved && window.i18n[saved] ? saved : 'en');
+} catch(e) {
+  applyLang('en');
+}
+</script>
 </body>
-</html> 
+</html>
