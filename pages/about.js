@@ -38,7 +38,7 @@
           <div class="about-wrap">
             <div>
               <div class="about-img">
-                <img src="holovna/5253685811759224568_120.jpg"
+                <img src="holovna/5253685811759224559_121.jpg"
                      alt="Діти Божі"
                      loading="lazy"
                      onError=${e => { e.target.style.display='none'; }}/>
