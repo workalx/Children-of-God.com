@@ -254,10 +254,11 @@ footer strong { color: var(--gold-light); }
 
 /* ══ ABOUT PAGE ══ */
 .about-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+.about-photo-wrap { position: relative; }
 .about-img  {
   border-radius: var(--radius);
   background: linear-gradient(135deg,#1a3a72,#2657a8);
-  position: relative; overflow: hidden;
+  overflow: hidden;
 }
 .about-img img {
   width: 100%; height: auto;
@@ -266,6 +267,7 @@ footer strong { color: var(--gold-light); }
 }
 .about-badge {
   position: absolute; bottom: -16px; right: -16px;
+  z-index: 10;
   background: linear-gradient(135deg,var(--gold),var(--gold-light));
   color: var(--blue); font-weight: 700; font-size: .9rem;
   padding: 14px 20px; border-radius: var(--radius);

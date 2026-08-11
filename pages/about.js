@@ -36,14 +36,14 @@
       <div class="page-section" id="about">
         <div class="section-inner">
           <div class="about-wrap">
-            <div>
+            <div class="about-photo-wrap">
               <div class="about-img">
                 <img src="holovna/5253685811759224559_121.jpg"
                      alt="Діти Божі"
                      loading="lazy"
                      onError=${e => { e.target.style.display='none'; }}/>
-                <div class="about-badge">${t.about_badge}</div>
               </div>
+              <div class="about-badge">${t.about_badge}</div>
             </div>
             <div class="about-text">
               <span class="section-tag">${t.about_tag}</span>
