@@ -507,7 +507,8 @@ footer strong { color: var(--gold-light); }
 
 /* ══ CONTACT ══ */
 .contact-wrap { max-width: 700px; margin: 0 auto; text-align: center; }
-.contact-desc { color: var(--text-muted); font-size: 1rem; margin-bottom: 2.5rem; }
+.contact-desc { color: var(--text-muted); font-size: 1rem; margin-bottom: .5rem; }
+.contact-hint { color: var(--text-muted); font-size: .9rem; font-style: italic; margin-bottom: 1.5rem; }
 .contact-btns { display: flex; gap: 1.2rem; flex-wrap: wrap; justify-content: center; }
 .contact-btn  {
   display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
@@ -521,6 +522,8 @@ footer strong { color: var(--gold-light); }
 .btn-email { background: #1a3a72; color: #fff; box-shadow: 0 4px 16px rgba(26,58,114,.3); }
 .btn-tg    { background: #229ED9; color: #fff; box-shadow: 0 4px 16px rgba(34,158,217,.35); }
 .btn-yt    { background: #FF0000; color: #fff; box-shadow: 0 4px 16px rgba(255,0,0,.3); }
+.btn-wa    { background: #25D366; color: #fff; box-shadow: 0 4px 16px rgba(37,211,102,.35); }
+.btn-ig    { background: linear-gradient(45deg,#f9ce34,#ee2a7b,#6228d7); color: #fff; box-shadow: 0 4px 16px rgba(238,42,123,.3); }
 .email-reveal {
   margin-top: 1.5rem; background: #fff;
   border: 2px solid var(--gold); border-radius: var(--radius);
@@ -529,6 +532,38 @@ footer strong { color: var(--gold-light); }
 }
 @keyframes rev { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
 .email-reveal span { font-size: 1.1rem; font-weight: 700; color: var(--blue); }
+
+/* ── Contact: two-person cards ── */
+.contact-people {
+  display: grid; grid-template-columns: repeat(2, minmax(160px, 230px));
+  gap: 1.5rem; justify-content: center; margin-bottom: 0;
+}
+.contact-person-card {
+  background: #fff; border-radius: 20px; padding: 1.75rem 1.25rem;
+  text-align: center; cursor: pointer; border: 2px solid transparent;
+  box-shadow: 0 4px 20px rgba(10,31,68,.08);
+  transition: border-color .25s, transform .25s, box-shadow .25s;
+}
+.contact-person-card:hover { transform: translateY(-4px); box-shadow: 0 10px 26px rgba(10,31,68,.14); }
+.contact-person-card.is-active { border-color: var(--gold); }
+.contact-person-photo {
+  width: 84px; height: 84px; border-radius: 50%; margin: 0 auto .9rem;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; overflow: hidden;
+}
+.contact-person-photo.placeholder { background: #f6f8fc; border: 2px dashed rgba(10,31,68,.25); color: var(--text-muted); }
+.contact-person-name { font-family: var(--serif); font-weight: 700; font-size: 1.05rem; color: var(--blue); }
+.contact-person-role { font-size: .85rem; color: var(--text-muted); margin-top: .2rem; }
+
+.contact-detail {
+  max-width: 600px; margin: 1.75rem auto 0; background: #fff;
+  border-radius: 20px; padding: 1.75rem 2rem;
+  box-shadow: 0 4px 20px rgba(10,31,68,.08);
+  animation: rev .3s ease;
+}
+.contact-detail-text { color: #374060; line-height: 1.75; margin-bottom: 1.5rem; }
+.contact-detail .contact-btn { padding: 1.1rem 1.4rem; min-width: 100px; font-size: .92rem; }
+.contact-detail .contact-btn svg { width: 28px; height: 28px; }
 
 /* ══ DONATE ══ */
 .donate-section { background: var(--gold-pale); }
@@ -1082,4 +1117,7 @@ body.is-admin main { padding: 0; }
 @media (max-width: 600px) {
   .nav-links { display: none; }
   .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 420px) {
+  .contact-people { grid-template-columns: 1fr; max-width: 230px; margin-left: auto; margin-right: auto; }
 }
