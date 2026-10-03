@@ -12,7 +12,7 @@ A multi-page website for **"Children of God"** ("Діти Божі"), a Ukrainia
 - **Donate page** — PayPal and Interac e-Transfer instructions with a thank-you modal
 - **Password-protected admin panel** (`#admin`) — drag-and-drop photo/video upload (converted to base64 via the FileReader API) for publishing new feed posts
 
-> **Note:** the news feed is currently locked (shows a "coming soon" placeholder and is hidden from navigation) while content is being prepared. To re-enable it, flip `FEED_LOCKED` to `false` near the top of `app.js`.
+> **Note:** the news feed is the home page — opening the site without a hash lands on `#feed`. To temporarily lock it (shows a "coming soon" placeholder, hides it from navigation and makes `#about` the home page), flip `FEED_LOCKED` to `true` near the top of `app.js`.
 
 ## Tech stack
 

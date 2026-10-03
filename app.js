@@ -9,8 +9,8 @@ window.html = htm.bind(React.createElement);
   const { useState, useEffect, useRef, useCallback, createContext, useContext, memo } = React;
   const html = window.html;
 
-  // Тимчасове блокування стрічки новин — став false, коли треба відкрити розділ
-  const FEED_LOCKED = true;
+  // Блокування стрічки новин — став true, щоб тимчасово закрити розділ
+  const FEED_LOCKED = false;
   const HOME_PAGE = FEED_LOCKED ? 'about' : 'feed';
 
   /* ─────────────────────────────
