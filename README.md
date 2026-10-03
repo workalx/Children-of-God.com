@@ -6,11 +6,11 @@ A multi-page website for **"Children of God"** ("Діти Божі"), a Ukrainia
 
 - **Hash-based routing** (`#feed`, `#about`, `#donate`, `#admin`) with pages loaded on demand — no bundler, no build step
 - **Trilingual UI** — Ukrainian / English / Russian, switchable from the nav, with English as the default
-- **News feed** — Instagram-style post feed with likes and comments (posts stored in `localStorage`)
+- **News feed** — Instagram-style post feed with likes and comments. Posts live in `posts.json` (media in `media/`) in this repository, so every visitor sees the same feed
 - **User accounts** — client-side registration/login (stored in `localStorage`/`sessionStorage`)
 - **About page** — group bio, photo gallery, embedded videos, and contact info, all lazy-rendered via `IntersectionObserver` as you scroll
 - **Donate page** — PayPal and Interac e-Transfer instructions with a thank-you modal
-- **Password-protected admin panel** (`#admin`) — drag-and-drop photo/video upload (converted to base64 via the FileReader API) for publishing new feed posts
+- **Password-protected admin panel** (`#admin`) — drag-and-drop photo/video upload for publishing new feed posts. Publishing commits `posts.json` and the media file to this repository through the GitHub API, so the admin pastes a fine-grained GitHub token once per device (Contents: Read and write on this repo only; kept in that browser's `localStorage`). New posts go live after GitHub Pages redeploys, about 1–2 minutes
 
 > **Note:** the news feed is the home page — opening the site without a hash lands on `#feed`. To temporarily lock it (shows a "coming soon" placeholder, hides it from navigation and makes `#about` the home page), flip `FEED_LOCKED` to `true` near the top of `app.js`.
 
@@ -19,7 +19,7 @@ A multi-page website for **"Children of God"** ("Діти Божі"), a Ukrainia
 - **React 18** + **htm** (JSX-like syntax without a build step), loaded straight from a CDN
 - Plain **JavaScript**, **HTML**, **CSS** — no npm install, no bundler, no framework CLI
 - Fonts: Playfair Display + Nunito (Google Fonts)
-- All user data (posts, accounts, comments) lives in the browser's `localStorage` / `sessionStorage` — there is no backend
+- Accounts, comments and likes live in the browser's `localStorage` / `sessionStorage` — there is no backend; only posts are shared, via `posts.json`
 
 ## Project structure
 

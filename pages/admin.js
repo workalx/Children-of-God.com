@@ -11,6 +11,85 @@
   function getComments()   { try { return JSON.parse(localStorage.getItem('ditibozhi_comments') || '{}'); } catch { return {}; } }
   function saveComments(c) { localStorage.setItem('ditibozhi_comments', JSON.stringify(c)); }
 
+  /* ── GitHub — спільне сховище постів ──
+     Пости лежать у posts.json в репозиторії (медіа — у media/), тому їх бачать усі
+     відвідувачі. localStorage тут лише кеш для панелі. Запис іде через GitHub API
+     з токеном адміністратора, який зберігається тільки в його браузері. */
+  const GH_REPO      = 'workalx/Children-of-God.com';
+  const GH_BRANCH    = 'main';
+  const GH_API       = 'https://api.github.com/repos/' + GH_REPO + '/contents/';
+  const GH_TOKEN_KEY = 'ditibozhi_gh_token';
+  const POSTS_FILE   = 'posts.json';
+  const MEDIA_DIR    = 'media/';
+  const MAX_MEDIA_MB = 25;
+
+  function getToken()  { try { return localStorage.getItem(GH_TOKEN_KEY) || ''; } catch { return ''; } }
+  function setToken(t) { try { t ? localStorage.setItem(GH_TOKEN_KEY, t) : localStorage.removeItem(GH_TOKEN_KEY); } catch {} }
+
+  const b64enc = s => btoa(unescape(encodeURIComponent(s)));
+  const b64dec = s => decodeURIComponent(escape(atob(s.replace(/\s/g, ''))));
+
+  async function gh(method, path, body, token = getToken()) {
+    const res = await fetch(GH_API + path + (method === 'GET' ? '?ref=' + GH_BRANCH : ''), {
+      method,
+      cache: 'no-store',
+      headers: { Accept: 'application/vnd.github+json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
+      body: body ? JSON.stringify({ branch: GH_BRANCH, ...body }) : undefined,
+    }).catch(() => { throw new Error('Немає зв\'язку з GitHub'); });
+    if (res.status === 404 && method === 'GET') return null;
+    if (res.status === 401 || res.status === 403 || res.status === 404) throw new Error('Токен GitHub недійсний або не має доступу до репозиторію');
+    if (res.status === 409) throw new Error('Пости щойно змінились — спробуйте ще раз');
+    if (!res.ok) throw new Error('GitHub: помилка ' + res.status);
+    return res.json();
+  }
+
+  async function fetchRemotePosts(token) {
+    const f = await gh('GET', POSTS_FILE, null, token);
+    const posts = f ? JSON.parse(b64dec(f.content) || '[]') : [];
+    return { posts: Array.isArray(posts) ? posts : [], sha: f ? f.sha : undefined };
+  }
+
+  // Тягне posts.json у локальний кеш
+  async function pullPosts() {
+    const { posts } = await fetchRemotePosts();
+    // старі пости, що жили лише в цьому браузері, зберігаємо про всяк випадок
+    const local = localStorage.getItem('ditibozhi_posts');
+    if (local && local !== '[]' && !localStorage.getItem('ditibozhi_posts_backup')) {
+      localStorage.setItem('ditibozhi_posts_backup', local);
+    }
+    savePosts(posts);
+  }
+
+  // Застосовує fn до свіжої версії posts.json і комітить результат
+  async function updatePosts(fn, message) {
+    const { posts, sha } = await fetchRemotePosts();
+    const next = fn(posts);
+    await gh('PUT', POSTS_FILE, { message, content: b64enc(JSON.stringify(next, null, 2) + '\n'), sha });
+    savePosts(next);
+  }
+
+  // Завантажує data:-URL як файл у media/ і повертає шлях до нього
+  async function uploadMedia(dataUrl) {
+    const comma   = dataUrl.indexOf(',');
+    const content = dataUrl.slice(comma + 1);
+    if (content.length * 0.75 > MAX_MEDIA_MB * 1024 * 1024) {
+      throw new Error('Файл завеликий (макс. ' + MAX_MEDIA_MB + ' МБ) — для відео вставте посилання');
+    }
+    const sub  = dataUrl.slice(dataUrl.indexOf('/') + 1, dataUrl.indexOf(';'));
+    const ext  = { jpeg: 'jpg', quicktime: 'mov', 'svg+xml': 'svg' }[sub] || sub.replace(/[^a-z0-9]/gi, '');
+    const path = MEDIA_DIR + Date.now() + '.' + ext;
+    await gh('PUT', path, { message: 'Додати медіа: ' + path, content });
+    return path;
+  }
+
+  async function removeMedia(path) {
+    if (!path || !path.startsWith(MEDIA_DIR)) return;
+    try {
+      const f = await gh('GET', path);
+      if (f) await gh('DELETE', path, { message: 'Видалити медіа: ' + path, sha: f.sha });
+    } catch {}
+  }
+
   /* ── Analytics (localStorage-based visit tracking) ── */
   function getAnalytics() {
     try { return JSON.parse(localStorage.getItem('ditibozhi_analytics') || '{}'); } catch { return {}; }
@@ -136,7 +215,7 @@
   }
 
   /* ── PostForm ── */
-  function PostForm({ editPost, onSave, onCancel, toast }) {
+  function PostForm({ editPost, onSave, onCancel, toast, busy }) {
     const today = () => {
       const d = new Date();
       const m = ['січня','лютого','березня','квітня','травня','червня','липня','серпня','вересня','жовтня','листопада','грудня'];
@@ -207,11 +286,65 @@
         </div>
 
         <div class="adm-form-actions">
-          <button class="adm-btn adm-btn-primary" onClick=${save}>
-            ${editPost ? 'Оновити пост' : 'Опублікувати'}
+          <button class="adm-btn adm-btn-primary" onClick=${save} disabled=${busy}>
+            ${busy ? 'Публікація…' : editPost ? 'Оновити пост' : 'Опублікувати'}
           </button>
           ${editPost && html`<button class="adm-btn adm-btn-ghost" onClick=${onCancel}>Скасувати</button>`}
         </div>
+      </div>`;
+  }
+
+  /* ── GitHubConnect — токен для публікації постів ── */
+  function GitHubConnect({ connected, onChange, toast }) {
+    const [checking, setChecking] = useState(false);
+    const ref = useRef();
+
+    async function connect() {
+      const token = ref.current.value.trim();
+      if (!token) return;
+      setChecking(true);
+      try {
+        await fetchRemotePosts(token);
+        setToken(token);
+        onChange();
+        toast('GitHub підключено');
+      } catch (e) { toast(e.message, 'error'); }
+      setChecking(false);
+    }
+
+    function disconnect() {
+      if (!confirm('Відключити GitHub на цьому пристрої?')) return;
+      setToken('');
+      onChange();
+    }
+
+    return html`
+      <div class="adm-card" style=${{ marginBottom: '1.2rem' }}>
+        <div class="adm-card-header">
+          <div class="adm-card-title-row">
+            <span class="adm-card-title">Публікація для всіх відвідувачів</span>
+            ${connected && html`<span class="adm-badge-gold">GitHub підключено</span>`}
+          </div>
+          ${connected && html`<button class="adm-btn adm-btn-ghost adm-btn-sm" onClick=${disconnect}>Відключити</button>`}
+        </div>
+        ${connected
+          ? html`<div class="adm-drop-sub">Пости зберігаються в репозиторії сайту і з'являються у стрічці для всіх за 1–2 хвилини після публікації.</div>`
+          : html`
+            <div class="adm-drop-sub" style=${{ marginBottom: '.9rem' }}>
+              Щоб публікувати пости, один раз вставте токен GitHub. Створіть його на${' '}
+              <a class="adm-user-email-link" target="_blank" rel="noopener"
+                 href="https://github.com/settings/personal-access-tokens/new">github.com → Fine-grained tokens</a>:
+              Repository access — лише ${GH_REPO}, Permissions → Contents — Read and write.
+              Токен зберігається тільки в цьому браузері.
+            </div>
+            <div class="adm-field">
+              <label class="adm-label">Токен GitHub</label>
+              <input class="adm-input" type="password" ref=${ref} placeholder="github_pat_…" autocomplete="off"
+                     onKeyDown=${e => e.key === 'Enter' && connect()}/>
+            </div>
+            <button class="adm-btn adm-btn-primary" onClick=${connect} disabled=${checking}>
+              ${checking ? 'Перевірка…' : 'Підключити'}
+            </button>`}
       </div>`;
   }
 
@@ -563,6 +696,9 @@
     const [tick,       setTick]       = useState(0);
     const [lastUpdate, setLastUpdate] = useState(new Date());
     const [toast,      toastEl]       = useToast();
+    const [busy,       setBusy]       = useState(false);
+    const [formKey,    setFormKey]    = useState(0);
+    const [connected,  setConnected]  = useState(() => !!getToken());
 
     function refresh() {
       setPosts(getPosts());
@@ -570,28 +706,51 @@
       setLastUpdate(new Date());
     }
 
+    // Підтягує пости з GitHub у локальний кеш і перемальовує панель
+    function sync() {
+      return pullPosts().then(refresh, e => { refresh(); toast(e.message, 'error'); });
+    }
+
     useEffect(() => {
+      sync();
       const id = setInterval(refresh, 60000);
       return () => clearInterval(id);
     }, []);
 
-    function handleSave(data) {
-      const all = getPosts();
-      if (editing) {
-        const i = all.findIndex(p => p.id === editing.id);
-        if (i !== -1) all[i] = { ...all[i], ...data };
-        toast('Пост оновлено');
-      } else {
-        all.unshift({ id: Date.now(), likes: 0, ...data });
-        toast('Пост опубліковано');
-      }
-      savePosts(all); refresh(); setEditing(null);
+    function needToken() {
+      if (getToken()) return false;
+      toast('Спочатку підключіть GitHub у вкладці «Пости»', 'error');
+      return true;
     }
 
-    function handleDelete(id) {
-      if (!confirm('Видалити цей пост?')) return;
-      savePosts(getPosts().filter(p => p.id !== id));
-      refresh(); toast('Пост видалено');
+    async function handleSave(data) {
+      if (busy || needToken()) return;
+      setBusy(true);
+      try {
+        if (data.image.startsWith('data:')) data = { ...data, image: await uploadMedia(data.image) };
+        if (editing) {
+          await updatePosts(all => all.map(p => p.id === editing.id ? { ...p, ...data } : p), 'Оновити пост');
+          if (editing.image !== data.image) removeMedia(editing.image);
+          toast('Пост оновлено');
+        } else {
+          await updatePosts(all => [{ id: Date.now(), likes: 0, ...data }, ...all], 'Новий пост');
+          toast('Пост опубліковано — з\'явиться на сайті за 1–2 хв');
+        }
+        refresh(); setEditing(null); setFormKey(k => k + 1);
+      } catch (e) { toast(e.message, 'error'); }
+      setBusy(false);
+    }
+
+    async function handleDelete(id) {
+      if (busy || needToken() || !confirm('Видалити цей пост?')) return;
+      setBusy(true);
+      try {
+        const post = getPosts().find(p => p.id === id);
+        await updatePosts(all => all.filter(p => p.id !== id), 'Видалити пост');
+        removeMedia(post?.image);
+        refresh(); toast('Пост видалено');
+      } catch (e) { toast(e.message, 'error'); }
+      setBusy(false);
     }
 
     function goEdit(p) { setTab('posts'); setEditing(p); }
@@ -672,7 +831,7 @@
                   Оновлено о ${lastUpdate.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
-              <button class="adm-btn adm-btn-ghost adm-btn-sm adm-refresh-btn" onClick=${refresh}
+              <button class="adm-btn adm-btn-ghost adm-btn-sm adm-refresh-btn" onClick=${sync}
                       title="Оновити дані зараз">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                   <polyline points="23 4 23 10 17 10"/>
@@ -691,7 +850,9 @@
             ${tab === 'dashboard' && html`<${Dashboard} posts=${posts} onTab=${goTab} tick=${tick}/>`}
             ${tab === 'posts' && html`
               <div>
-                <${PostForm} key=${editing?.id || 'new'} editPost=${editing}
+                <${GitHubConnect} connected=${connected} toast=${toast}
+                                  onChange=${() => setConnected(!!getToken())}/>
+                <${PostForm} key=${editing?.id || 'new' + formKey} editPost=${editing} busy=${busy}
                              onSave=${handleSave} onCancel=${() => setEditing(null)} toast=${toast}/>
                 <p class="adm-section-title" style=${{ marginTop: '2rem' }}>
                   Всі пости${' '}<span class="adm-badge-gold">${posts.length}</span>

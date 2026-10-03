@@ -116,10 +116,17 @@
   /* ── Feed Page ── */
   function FeedPage() {
     const { lang, t, user } = Ctx();
-    const [posts, setPosts] = useState(getPosts);
+    const [posts, setPosts] = useState(null);
 
-    // refresh when lang or user changes (comments toggle)
-    useEffect(() => { setPosts(getPosts()); }, [lang, user]);
+    // спільні пости з posts.json; локальний кеш — лише якщо файл недоступний
+    useEffect(() => {
+      let alive = true;
+      fetch('posts.json?t=' + Date.now(), { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .catch(getPosts)
+        .then(p => { if (alive) setPosts(Array.isArray(p) ? p : []); });
+      return () => { alive = false; };
+    }, []);
 
     return html`
       <div>
@@ -133,7 +140,9 @@
           <span class="section-tag">${t.feed_tag}</span>
           <h2 class="section-title" dangerouslySetInnerHTML=${{ __html: t.feed_title }}></h2>
           <div class="section-line"></div>
-          ${posts.length === 0
+          ${!posts
+            ? html`<div class="page-loader">⏳</div>`
+            : posts.length === 0
             ? html`<div class="feed-empty"><span class="icon">🕊️</span><p>${t.feed_empty}</p></div>`
             : posts.map((p, i) => html`
                 <${PostCard} key=${p.id || i} p=${p} idx=${i} lang=${lang} t=${t} user=${user} navLogo=${t.nav_logo}/>`)}
