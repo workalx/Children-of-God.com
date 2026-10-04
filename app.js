@@ -147,7 +147,7 @@ window.html = htm.bind(React.createElement);
     src = String(src || '').trim();
     if (!src) return null;
     const yt = src.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([\w-]{11})/i);
-    if (yt) return { kind: 'youtube', src: 'https://www.youtube.com/embed/' + yt[1] + '?rel=0' };
+    if (yt) return { kind: 'youtube', src: 'https://www.youtube.com/embed/' + yt[1] + '?rel=0', thumb: 'https://img.youtube.com/vi/' + yt[1] + '/hqdefault.jpg' };
     if (src.startsWith('data:video') || /\.(mp4|webm|mov|ogg)([?#]|$)/i.test(src)) return { kind: 'video', src };
     return { kind: 'image', src };
   };
@@ -311,9 +311,11 @@ window.html = htm.bind(React.createElement);
      Page Loader — dynamic script per route
   ───────────────────────────── */
   const loadedPages = {};
+  const failedPages = {};
 
   function PageLoader({ page }) {
     const [Comp, setComp] = useState(null);
+    const [attempt, setAttempt] = useState(0);
 
     useEffect(() => {
       let alive = true;
@@ -324,7 +326,7 @@ window.html = htm.bind(React.createElement);
       function done() {
         if (!alive) return;
         const C = window.Pages && window.Pages[page];
-        setComp(() => C || NotFound);
+        setComp(() => C || (failedPages[page] ? LoadFailed : NotFound));
       }
 
       // Already loaded?
@@ -336,17 +338,28 @@ window.html = htm.bind(React.createElement);
         const s = document.createElement('script');
         s.src = 'pages/' + page + '.js';
         s.onload  = () => resolve();
-        s.onerror = () => resolve();
+        // невдалу спробу не кешуємо — інакше сторінка лишалась би «404» до перезавантаження
+        s.onerror = () => { delete loadedPages[page]; failedPages[page] = true; s.remove(); resolve(); };
+        delete failedPages[page];
         document.body.appendChild(s);
       });
       if (!existing) loadedPages[page] = p;
       p.then(done);
 
       return () => { alive = false; };
-    }, [page]);
+    }, [page, attempt]);
 
     if (!Comp) return html`<div class="page-loader">⏳</div>`;
-    return html`<${ErrorBoundary} key=${page}><${Comp}/><//>`;
+    return html`<${ErrorBoundary} key=${page}><${Comp} onRetry=${() => setAttempt(a => a + 1)}/><//>`;
+  }
+
+  // Скрипт сторінки не завантажився: або її не існує, або зник зв'язок
+  function LoadFailed({ onRetry }) {
+    return html`
+      <div class="page-loader">
+        <p>⚠️ Не вдалося завантажити сторінку. Перевірте адресу або з'єднання.</p>
+        <button class="gallery-view-btn" style=${{ marginTop: '1.2rem' }} onClick=${onRetry}>↻ Спробувати ще раз</button>
+      </div>`;
   }
 
   function NotFound() {
