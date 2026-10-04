@@ -87,11 +87,15 @@
       setLikes(l => next ? l + 1 : Math.max(0, l - 1));
     }
 
-    const media = p.image
-      ? (p.image.startsWith('data:video') || /\.(mp4|webm|mov|ogg)$/i.test(p.image)
-          ? html`<video class="post-image" src=${p.image} controls style=${{ maxHeight: '480px', width: '100%' }}></video>`
-          : html`<img class="post-image" src=${p.image} alt="" loading="lazy" onError=${e=>e.target.style.display='none'}/>`)
-      : null;
+    const m = window.mediaInfo(p.image);
+    const media = !m ? null
+      : m.kind === 'youtube'
+        ? html`<iframe class="post-image" src=${m.src} loading="lazy" frameBorder="0"
+                       allow="autoplay; encrypted-media; fullscreen" allowFullScreen
+                       style=${{ aspectRatio: '16 / 9', maxHeight: 'none' }}></iframe>`
+      : m.kind === 'video'
+        ? html`<video class="post-image" src=${m.src} controls style=${{ maxHeight: '480px', width: '100%' }}></video>`
+        : html`<img class="post-image" src=${m.src} alt="" loading="lazy" onError=${e=>e.target.style.display='none'}/>`;
 
     return html`
       <article class="post-card">

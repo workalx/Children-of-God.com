@@ -141,6 +141,18 @@ window.html = htm.bind(React.createElement);
   };
 
   /* ─────────────────────────────
+     Медіа поста — файл із media/, data:-URL або зовнішнє посилання (зокрема YouTube)
+  ───────────────────────────── */
+  window.mediaInfo = function (src) {
+    src = String(src || '').trim();
+    if (!src) return null;
+    const yt = src.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([\w-]{11})/i);
+    if (yt) return { kind: 'youtube', src: 'https://www.youtube.com/embed/' + yt[1] + '?rel=0' };
+    if (src.startsWith('data:video') || /\.(mp4|webm|mov|ogg)([?#]|$)/i.test(src)) return { kind: 'video', src };
+    return { kind: 'image', src };
+  };
+
+  /* ─────────────────────────────
      Context
   ───────────────────────────── */
   const Ctx = createContext({});
@@ -160,7 +172,7 @@ window.html = htm.bind(React.createElement);
     return html`
       <nav>
         <a class="nav-logo-img" href=${'#' + HOME_PAGE} onClick=${e => { e.preventDefault(); navigate(HOME_PAGE); }}>
-          <img src=${lang === 'uk' ? 'logo.png' : lang === 'ru' ? 'logo(2).png' : 'logo(1).png'} alt=${t.nav_logo} class="nav-logo-png" onerror=${e => { e.target.style.display='none'; e.target.nextSibling.style.display='inline'; }}/>
+          <img src=${lang === 'uk' ? 'logo.png' : lang === 'ru' ? 'logo(2).png' : 'logo(1).png'} alt=${t.nav_logo} class="nav-logo-png" onError=${e => { e.target.style.display='none'; e.target.nextSibling.style.display='inline'; }}/>
           <span class="nav-logo-fallback" style=${{ display:'none' }}>${t.nav_logo}</span>
         </a>
         <div class="nav-right">

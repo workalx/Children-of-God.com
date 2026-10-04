@@ -37,10 +37,14 @@
       body: body ? JSON.stringify({ branch: GH_BRANCH, ...body }) : undefined,
     }).catch(() => { throw new Error('Немає зв\'язку з GitHub'); });
     if (res.status === 404 && method === 'GET') return null;
-    if (res.status === 401 || res.status === 403 || res.status === 404) throw new Error('Токен GitHub недійсний або не має доступу до репозиторію');
+    if (res.ok) return res.json();
+    const reason = await res.json().then(j => j.message || '', () => '');
+    const tail   = ' (GitHub ' + res.status + (reason ? ': ' + reason : '') + ')';
+    if (res.status === 401) throw new Error('Токен недійсний: скопійований не повністю або сплив термін дії' + tail);
+    if (res.status === 403 && /rate limit/i.test(reason)) throw new Error('Забагато запитів до GitHub — спробуйте за кілька хвилин' + tail);
+    if (res.status === 403 || res.status === 404) throw new Error('Токен не має права запису в ' + GH_REPO + '. У токені потрібно: Repository access → Only select repositories → цей репозиторій; Permissions → Contents → Read and write' + tail);
     if (res.status === 409) throw new Error('Пости щойно змінились — спробуйте ще раз');
-    if (!res.ok) throw new Error('GitHub: помилка ' + res.status);
-    return res.json();
+    throw new Error('Помилка GitHub' + tail);
   }
 
   async function fetchRemotePosts(token) {
@@ -174,7 +178,7 @@
     function toast(msg, type = 'success') {
       setS({ msg, type, show: true });
       clearTimeout(t.current);
-      t.current = setTimeout(() => setS(v => ({ ...v, show: false })), 2800);
+      t.current = setTimeout(() => setS(v => ({ ...v, show: false })), type === 'error' ? 15000 : 2800);
     }
     const el = html`
       <div class=${'adm-toast' + (s.show ? ' show' : '') + ' ' + s.type}>
@@ -229,6 +233,8 @@
     const [mtype, setMtype] = useState('');
     const [url,   setUrl]   = useState('');
 
+    const preview = window.mediaInfo(media) || {};
+
     function onFile(d, t) { setMedia(d); setMtype(t); setUrl(''); }
     function clear()      { setMedia(''); setMtype(''); setUrl(''); }
     function onUrl(v)     { setUrl(v); setMedia(v); setMtype('url'); }
@@ -275,9 +281,12 @@
             ? html`
               <div class="adm-media-preview">
                 <button class="adm-media-clear" onClick=${clear}>✕</button>
-                ${mtype === 'video'
+                ${preview.kind === 'youtube'
+                  ? html`<iframe src=${preview.src} frameBorder="0" allowFullScreen class="adm-media-el"
+                                 style=${{ height: '200px', aspectRatio: '16 / 9' }}></iframe>`
+                  : preview.kind === 'video'
                   ? html`<video src=${media} controls class="adm-media-el"></video>`
-                  : html`<img src=${media} class="adm-media-el" onError=${e => e.target.style.display='none'}/>`}
+                  : html`<img key=${media} src=${media} class="adm-media-el" onError=${e => e.target.style.display='none'}/>`}
               </div>`
             : html`<${DropZone} onFile=${onFile}/>`}
           <div class="adm-or-line">або вставте URL</div>
