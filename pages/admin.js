@@ -18,6 +18,7 @@
   const GH_REPO      = 'workalx/Children-of-God.com';
   const GH_BRANCH    = 'main';
   const GH_API       = 'https://api.github.com/repos/' + GH_REPO + '/contents/';
+  const GH_RAW       = 'https://raw.githubusercontent.com/' + GH_REPO + '/' + GH_BRANCH + '/';
   const GH_TOKEN_KEY = 'ditibozhi_gh_token';
   const POSTS_FILE   = 'posts.json';
   const MEDIA_DIR    = 'media/';
@@ -357,6 +358,24 @@
       </div>`;
   }
 
+  /* ── PostThumb — мініатюра поста у списку ── */
+  function PostThumb({ src }) {
+    const [fails, setFails] = useState(0);
+    const m = window.mediaInfo(src);
+    if (!m) return null;
+    // щойно завантажений файл ще не на сайті (Pages оновлюється 1–2 хв) — беремо його прямо з репозиторію
+    const inRepo = m.kind !== 'youtube' && m.src.startsWith(MEDIA_DIR);
+    if (fails > (inRepo ? 1 : 0)) return null;
+    const url    = m.kind === 'youtube' ? m.thumb : fails ? GH_RAW + m.src : m.src;
+    const onFail = () => setFails(n => n + 1);
+    return html`
+      <div class="adm-post-thumb">
+        ${m.kind === 'video'
+          ? html`<video src=${url} muted preload="metadata" onError=${onFail}></video>`
+          : html`<img src=${url} alt="" onError=${onFail}/>`}
+      </div>`;
+  }
+
   /* ── PostList ── */
   function PostList({ posts, onEdit, onDelete }) {
     if (!posts.length) return html`
@@ -376,10 +395,7 @@
           const cmts = getComments()[p.id]?.length || 0;
           return html`
             <div class="adm-post-row" key=${p.id}>
-              ${p.image && html`
-                <div class="adm-post-thumb">
-                  <img src=${p.image} alt="" onError=${e => e.target.parentNode.remove()}/>
-                </div>`}
+              <${PostThumb} key=${p.image} src=${p.image}/>
               <div class="adm-post-row-meta">
                 <span class="adm-post-row-date">${p.date}</span>
                 <span class="adm-post-row-text">${text.length > 100 ? text.slice(0, 100) + '…' : text}</span>
