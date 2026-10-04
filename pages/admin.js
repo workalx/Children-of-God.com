@@ -233,6 +233,8 @@
     const [mtype, setMtype] = useState('');
     const [url,   setUrl]   = useState('');
 
+    const preview = window.mediaInfo(media) || {};
+
     function onFile(d, t) { setMedia(d); setMtype(t); setUrl(''); }
     function clear()      { setMedia(''); setMtype(''); setUrl(''); }
     function onUrl(v)     { setUrl(v); setMedia(v); setMtype('url'); }
@@ -279,9 +281,12 @@
             ? html`
               <div class="adm-media-preview">
                 <button class="adm-media-clear" onClick=${clear}>✕</button>
-                ${mtype === 'video'
+                ${preview.kind === 'youtube'
+                  ? html`<iframe src=${preview.src} frameBorder="0" allowFullScreen class="adm-media-el"
+                                 style=${{ height: '200px', aspectRatio: '16 / 9' }}></iframe>`
+                  : preview.kind === 'video'
                   ? html`<video src=${media} controls class="adm-media-el"></video>`
-                  : html`<img src=${media} class="adm-media-el" onError=${e => e.target.style.display='none'}/>`}
+                  : html`<img key=${media} src=${media} class="adm-media-el" onError=${e => e.target.style.display='none'}/>`}
               </div>`
             : html`<${DropZone} onFile=${onFile}/>`}
           <div class="adm-or-line">або вставте URL</div>
