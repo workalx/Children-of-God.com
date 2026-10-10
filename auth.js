@@ -66,7 +66,7 @@ const Auth = (function () {
     if (EMULATOR) return;
     try {
       if (sessionStorage.getItem('ditibozhi_profile_saved') === u.uid) return;
-      const fs = await import(FIREBASE_SDK + 'firestore.js');
+      const fs = await import(FIREBASE_SDK + 'firestore-lite.js');
       const me = toUser(u);
       await fs.setDoc(fs.doc(fs.getFirestore(app), 'users', u.uid), {
         username: me.username,
@@ -110,6 +110,8 @@ const Auth = (function () {
 
   return {
     user: () => current,
+    // застосунок Firebase — для db.js
+    app: () => ready.then(fb => fb.app),
     setLang(l) { lang = l; },
 
     // Викликає fn при кожній зміні користувача; повертає функцію відписки
@@ -169,38 +171,3 @@ const Auth = (function () {
   };
 })();
 
-function authGetCurrentUser() { return Auth.user(); }
-
-// ── Коментарі ──
-const COMMENTS_KEY = 'ditibozhi_comments';
-
-function commentsGet(postId) {
-  try {
-    const all = JSON.parse(localStorage.getItem(COMMENTS_KEY) || '{}');
-    return all[postId] || [];
-  } catch(e) { return []; }
-}
-function commentsAdd(postId, text) {
-  const user = authGetCurrentUser();
-  if (!user) return false;
-  try {
-    const all = JSON.parse(localStorage.getItem(COMMENTS_KEY) || '{}');
-    if (!all[postId]) all[postId] = [];
-    all[postId].push({
-      id: Date.now(),
-      userId: user.id,
-      username: user.username,
-      text: text.trim(),
-      date: new Date().toLocaleDateString('uk-UA')
-    });
-    localStorage.setItem(COMMENTS_KEY, JSON.stringify(all));
-    return true;
-  } catch(e) { return false; }
-}
-function commentsDelete(postId, commentId) {
-  try {
-    const all = JSON.parse(localStorage.getItem(COMMENTS_KEY) || '{}');
-    if (all[postId]) all[postId] = all[postId].filter(c => c.id !== commentId);
-    localStorage.setItem(COMMENTS_KEY, JSON.stringify(all));
-  } catch(e) {}
-}

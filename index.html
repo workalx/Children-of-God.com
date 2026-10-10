@@ -8,7 +8,7 @@
   <!-- Preconnect до CDN — зменшує затримку DNS/TLS -->
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin/>
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net"/>
-  <!-- Firebase SDK (вхід і реєстрація) вантажиться з auth.js -->
+  <!-- Firebase SDK (вхід, коментарі, лайки) вантажиться з auth.js і db.js -->
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin/>
 
   <link rel="stylesheet" href="shared.css"/>
@@ -16,12 +16,13 @@
   <!--
     defer: скрипти завантажуються паралельно з HTML-парсингом,
     виконуються по порядку після парсингу — не блокують рендер.
-    Порядок виконання: react → react-dom → htm → auth.js → app.js
+    Порядок виконання: react → react-dom → htm → auth.js → db.js → app.js
   -->
   <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js" crossorigin defer></script>
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin defer></script>
   <script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.js" crossorigin defer></script>
   <script src="auth.js" defer></script>
+  <script src="db.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
