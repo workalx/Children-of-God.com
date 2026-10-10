@@ -1,4 +1,4 @@
-/* pages/about.js — About + Gallery + Videos + Contact
+/* pages/about.js — About + Gallery + Videos + Contact, а також сторінка всіх відео (#videos)
    Секції рендеряться лише коли потрапляють у viewport (IntersectionObserver) */
 (function () {
   const { useState, useEffect, useRef, useContext, useCallback } = React;
@@ -69,20 +69,15 @@
     const [total,    setTotal]    = useState(0);
 
     useEffect(() => {
-      fetch('img/gallery.json')
-        .then(r => r.ok ? r.json() : [])
-        .then(list => {
-          if (Array.isArray(list) && list.length) {
-            setTotal(list.length);
-            // Беремо кожне 13-те фото (індекси 0,13,26,39,...) — макс 9 штук
-            const picked = [];
-            for (let i = 0; i < list.length && picked.length < 9; i += 13) {
-              picked.push(list[i]);
-            }
-            setPreviews(picked);
-          }
-        })
-        .catch(() => {});
+      window.loadGallery().then(list => {
+        setTotal(list.length);
+        // Беремо кожне 13-те фото (індекси 0,13,26,39,...) — макс 9 штук
+        const picked = [];
+        for (let i = 0; i < list.length && picked.length < 9; i += 13) {
+          picked.push(list[i]);
+        }
+        setPreviews(picked);
+      });
     }, []);
 
     return html`
@@ -96,7 +91,7 @@
             ${previews.length > 0
               ? previews.map((f, i) => html`
                   <div class="gallery-item" key=${i}>
-                    <img src=${'img/' + f} alt="" loading="lazy"
+                    <img src=${f} alt="" loading="lazy"
                          style=${{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
                          onError=${e => e.target.parentElement.style.display='none'}/>
 
@@ -117,60 +112,112 @@
       </div>`;
   }
 
-  /* ── Videos section ── */
-  function VideosSection({ t }) {
+  /* ── Videos ── */
+  // відео, закріплені на сторінці «Про нас»
+  const FEATURED_VIDEOS = [
+    { id: 'y5oPcHOqN6E', titleKey: 'v1' },
+    { id: 'C9i75QNCPNA', titleKey: 'v2' },
+    { id: 'bc6AkzOF3Aw', titleKey: 'v3' },
+  ];
+
+  function VideoCard({ id, title, thumb, playing, onPlay, t }) {
+    return html`
+      <div class="video-card">
+        <div class="video-player">
+          ${playing
+            ? html`<iframe
+                src=${'https://www.youtube.com/embed/' + id + '?autoplay=1&rel=0'}
+                frameBorder="0"
+                allow="autoplay; encrypted-media; fullscreen"
+                allowFullScreen
+                class="video-iframe"
+              />`
+            : html`<div class="video-thumb" onClick=${onPlay}>
+                <img src=${thumb} alt=${title} class="video-thumb-img" loading="lazy"/>
+                <div class="video-play-overlay">
+                  <div class="video-play-btn">
+                    <svg viewBox="0 0 24 24" width="36" height="36">
+                      <path fill="white" d="M8 5v14l11-7z"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>`}
+        </div>
+        <div class="video-info">
+          <div class="video-title">${title}</div>
+          <a class="video-yt-link" href=${'https://www.youtube.com/watch?v=' + id} target="_blank">
+            <svg viewBox="0 0 24 24" width="15" height="15" style=${{ flexShrink: 0 }}>
+              <path fill="currentColor" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+            </svg>
+            ${t.yt_watch}
+          </a>
+        </div>
+      </div>`;
+  }
+
+  function VideoGrid({ videos, t }) {
     const [playing, setPlaying] = useState(null);
+    return html`
+      <div class="videos-grid">
+        ${videos.map(v => html`
+          <${VideoCard} key=${v.id} ...${v} t=${t} playing=${playing === v.id} onPlay=${() => setPlaying(v.id)}/>`)}
+      </div>`;
+  }
 
-    const videos = [
-      { id: 'y5oPcHOqN6E', titleKey: 'v1' },
-      { id: 'C9i75QNCPNA', titleKey: 'v2' },
-      { id: 'bc6AkzOF3Aw', titleKey: 'v3' },
-    ];
+  const featuredVideos = t => FEATURED_VIDEOS.map(v => ({
+    id: v.id, title: t[v.titleKey], thumb: 'https://img.youtube.com/vi/' + v.id + '/maxresdefault.jpg',
+  }));
 
+  /* ── Videos section (preview на about-сторінці) ── */
+  function VideosSection({ t }) {
+    const { navigate } = Ctx();
     return html`
       <div class="page-section videos-section" id="videos">
         <div class="section-inner">
           <span class="section-tag">${t.videos_tag}</span>
           <h2 class="section-title" dangerouslySetInnerHTML=${{ __html: t.videos_title }}></h2>
           <div class="section-line"></div>
-          <div class="videos-grid">
-            ${videos.map(v => html`
-              <div class="video-card" key=${v.id}>
-                <div class="video-player">
-                  ${playing === v.id
-                    ? html`<iframe
-                        src=${'https://www.youtube.com/embed/' + v.id + '?autoplay=1&rel=0'}
-                        frameBorder="0"
-                        allow="autoplay; encrypted-media; fullscreen"
-                        allowFullScreen
-                        class="video-iframe"
-                      />`
-                    : html`<div class="video-thumb" onClick=${() => setPlaying(v.id)}>
-                        <img
-                          src=${'https://img.youtube.com/vi/' + v.id + '/maxresdefault.jpg'}
-                          alt=${t[v.titleKey]}
-                          class="video-thumb-img"
-                        />
-                        <div class="video-play-overlay">
-                          <div class="video-play-btn">
-                            <svg viewBox="0 0 24 24" width="36" height="36">
-                              <path fill="white" d="M8 5v14l11-7z"/>
-                            </svg>
-                          </div>
-                        </div>
-                      </div>`}
-                </div>
-                <div class="video-info">
-                  <div class="video-title">${t[v.titleKey]}</div>
-                  <a class="video-yt-link" href=${'https://www.youtube.com/watch?v=' + v.id} target="_blank">
-                    <svg viewBox="0 0 24 24" width="15" height="15" style=${{ flexShrink: 0 }}>
-                      <path fill="currentColor" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                    </svg>
-                    ${t.yt_watch}
-                  </a>
-                </div>
-              </div>`)}
+          <${VideoGrid} videos=${featuredVideos(t)} t=${t}/>
+          <div class="video-cta">
+            <a href="https://www.youtube.com/@child-of_God-t7o" target="_blank">${t.yt_btn}</a>
+            <button class="gallery-view-btn" onClick=${() => navigate('videos')}>${t.videos_all}</button>
           </div>
+        </div>
+      </div>`;
+  }
+
+  /* ── Videos Page (#videos) — закріплені відео та всі YouTube-посилання з постів ── */
+  function VideosPage() {
+    const { t, lang, navigate } = Ctx();
+    const [posts, setPosts] = useState(null);
+
+    useEffect(() => {
+      let alive = true;
+      window.loadPosts().then(p => { if (alive) setPosts(p); });
+      return () => { alive = false; };
+    }, []);
+
+    const fromPosts = (posts || []).flatMap(p => window.postMedia(p)
+      .map(window.mediaInfo)
+      .filter(m => m && m.kind === 'youtube')
+      .map(m => {
+        const text = p[{ uk: 'textUk', en: 'textEn', ru: 'textRu' }[lang]] || p.textUk || p.text || '';
+        return { id: m.id, thumb: m.thumb, title: (text.length > 80 ? text.slice(0, 80) + '…' : text) || p.date };
+      }));
+    // те саме відео показуємо один раз; закріплені зберігають власну назву
+    const featured = featuredVideos(t);
+    const seen     = new Set(featured.map(v => v.id));
+    const videos   = [...fromPosts.filter(v => !seen.has(v.id) && seen.add(v.id)), ...featured];
+
+    return html`
+      <div class="page-section videos-section">
+        <div class="section-inner">
+          <a class="post-back" href="#about" onClick=${e => { e.preventDefault(); navigate('about'); }}>${t.videos_back}</a>
+          <br/>
+          <span class="section-tag">${t.videos_tag}</span>
+          <h1 class="section-title" dangerouslySetInnerHTML=${{ __html: t.videos_title }}></h1>
+          <div class="section-line"></div>
+          ${posts ? html`<${VideoGrid} videos=${videos} t=${t}/>` : html`<div class="page-loader">⏳</div>`}
           <div class="video-cta">
             <a href="https://www.youtube.com/@child-of_God-t7o" target="_blank">${t.yt_btn}</a>
           </div>
@@ -271,4 +318,5 @@
 
   window.Pages = window.Pages || {};
   window.Pages.about = AboutPage;
+  window.Pages.videos = VideosPage;
 })();

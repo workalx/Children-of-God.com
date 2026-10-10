@@ -215,6 +215,7 @@ footer strong { color: var(--gold-light); }
   font-weight: 700; font-size: .92rem; text-decoration: none;
 }
 .post-back:hover { text-decoration: underline; }
+.videos-section .post-back { color: var(--gold-light); }
 video.lightbox-img, iframe.lightbox-img { background: #000; border: none; }
 
 /* Comments */
@@ -538,7 +539,7 @@ video.lightbox-img, iframe.lightbox-img { background: #000; border: none; }
 }
 .video-yt-link:hover { background: #ff0000; color: #fff; border-color: #ff0000; }
 
-.video-cta   { text-align: center; }
+.video-cta   { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 1rem; }
 .video-cta a {
   display: inline-flex; align-items: center; gap: .5rem;
   background: #ff0000; color: #fff; padding: .8rem 2rem;

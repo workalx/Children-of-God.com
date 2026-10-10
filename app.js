@@ -40,6 +40,7 @@ window.html = htm.bind(React.createElement);
       videos_tag: 'YouTube', videos_title: 'Наші <span>Відео</span>',
       v1: 'Звичайна співаночка «Дітей Божих»', v2: 'Because He lives — Child of God', v3: 'Прославлення в торговельному центрі',
       yt_btn: '▶ Наш канал на YouTube', yt_watch: '▶ Дивитися на YouTube',
+      videos_all: '🎬 Всі відео', videos_back: '← Про нас',
       contact_tag: "Зв'язок", contact_title: 'Зв\'яжіться з <span>Нами</span>',
       contact_desc: 'Запрошуємо на виступи, богослужіння та спільну молитву. Пишіть нам — відповімо з радістю!',
       contact_hint: 'Оберіть, з ким зв\'язатись:',
@@ -81,6 +82,7 @@ window.html = htm.bind(React.createElement);
       videos_tag: 'YouTube', videos_title: 'Our <span>Videos</span>',
       v1: 'Ordinary Singing of "Children of God"', v2: 'Because He lives — Child of God', v3: 'Worship in the Shopping Centre',
       yt_btn: '▶ Our YouTube Channel', yt_watch: '▶ Watch on YouTube',
+      videos_all: '🎬 All videos', videos_back: '← About us',
       contact_tag: 'Contact', contact_title: 'Get in <span>Touch</span>',
       contact_desc: 'We welcome invitations to performances, services, and prayer gatherings. Write to us — we\'ll respond with joy!',
       contact_hint: 'Choose who to contact:',
@@ -123,6 +125,7 @@ window.html = htm.bind(React.createElement);
       video_soon: 'Видео будет добавлено скоро', soon: 'Скоро',
       v1: 'Обычное пение «Детей Божьих»', v2: 'Because He lives — Child of God', v3: 'Прославление в торговом центре',
       yt_btn: '▶ Наш канал на YouTube', yt_watch: '▶ Смотреть на YouTube',
+      videos_all: '🎬 Все видео', videos_back: '← О нас',
       contact_tag: 'Контакты', contact_title: 'Свяжитесь с <span>Нами</span>',
       contact_desc: 'Приглашаем на выступления, богослужения и совместную молитву. Пишите нам — ответим с радостью!',
       contact_hint: 'Выберите, с кем связаться:',
@@ -150,7 +153,7 @@ window.html = htm.bind(React.createElement);
     src = String(src || '').trim();
     if (!src) return null;
     const yt = src.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([\w-]{11})/i);
-    if (yt) return { kind: 'youtube', src: 'https://www.youtube.com/embed/' + yt[1] + '?rel=0', thumb: 'https://img.youtube.com/vi/' + yt[1] + '/hqdefault.jpg' };
+    if (yt) return { kind: 'youtube', id: yt[1], src: 'https://www.youtube.com/embed/' + yt[1] + '?rel=0', thumb: 'https://img.youtube.com/vi/' + yt[1] + '/hqdefault.jpg' };
     if (src.startsWith('data:video') || /\.(mp4|webm|mov|ogg)([?#]|$)/i.test(src)) return { kind: 'video', src };
     return { kind: 'image', src };
   };
@@ -164,6 +167,23 @@ window.html = htm.bind(React.createElement);
     const all    = window.postMedia(p);
     const picked = Array.isArray(p && p.preview) ? p.preview.filter(s => all.includes(s)) : [];
     return (picked.length ? picked : all).slice(0, 4);
+  };
+  // Спільні пости з posts.json; локальний кеш — лише якщо файл недоступний
+  window.loadPosts = function () {
+    return fetch('posts.json?t=' + Date.now(), { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .catch(() => JSON.parse(localStorage.getItem('ditibozhi_posts') || '[]'))
+      .then(p => Array.isArray(p) ? p : [], () => []);
+  };
+  // Фото галереї: спершу фото з постів (новіші пости першими), далі архів із img/
+  window.loadGallery = function () {
+    const archive = fetch('img/gallery.json')
+      .then(r => r.ok ? r.json() : [])
+      .then(l => Array.isArray(l) ? l.map(f => 'img/' + f) : [], () => []);
+    return Promise.all([window.loadPosts(), archive]).then(([posts, old]) => {
+      const fresh = posts.flatMap(window.postMedia).filter(s => (window.mediaInfo(s) || {}).kind === 'image');
+      return [...new Set([...fresh, ...old])];
+    });
   };
 
   /* ─────────────────────────────
@@ -326,8 +346,8 @@ window.html = htm.bind(React.createElement);
   ───────────────────────────── */
   const loadedPages = {};
   const failedPages = {};
-  // сторінки, що живуть у чужому файлі: #post/<id> оголошено в pages/feed.js
-  const PAGE_FILES  = { post: 'feed' };
+  // сторінки, що живуть у чужому файлі: #post/<id> оголошено в pages/feed.js, #videos — у pages/about.js
+  const PAGE_FILES  = { post: 'feed', videos: 'about' };
 
   function PageLoader({ page, param }) {
     const [Comp, setComp] = useState(null);
@@ -418,6 +438,7 @@ window.html = htm.bind(React.createElement);
     const [name, ...rest] = page.split('/');
     const param = rest.join('/');
     const inFeed = name === 'feed' || name === 'post';
+    const inAbout = name === 'gallery' || name === 'videos';
 
     const navigate = useCallback(p => {
       setPage(p);
@@ -445,7 +466,7 @@ window.html = htm.bind(React.createElement);
 
     return html`
       <${Ctx.Provider} value=${ctx}>
-        <${Nav} page=${inFeed ? 'feed' : name} navigate=${navigate}/>
+        <${Nav} page=${inFeed ? 'feed' : inAbout ? 'about' : name} navigate=${navigate}/>
         <main>
           ${FEED_LOCKED && inFeed ? html`<${FeedLocked}/>` : html`<${PageLoader} page=${name} param=${param}/>`}
         </main>

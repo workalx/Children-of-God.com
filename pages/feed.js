@@ -11,9 +11,6 @@
   }
 
   /* ── helpers ── */
-  function getPosts() {
-    try { const r = localStorage.getItem('ditibozhi_posts'); return r ? JSON.parse(r) : []; } catch { return []; }
-  }
   function getPostText(p, lang) {
     if (lang === 'uk') return p.textUk || p.text || '';
     if (lang === 'en') return p.textEn || p.textUk || p.text || '';
@@ -200,15 +197,11 @@
       </article>`;
   }
 
-  // спільні пости з posts.json; локальний кеш — лише якщо файл недоступний
   function usePosts() {
     const [posts, setPosts] = useState(null);
     useEffect(() => {
       let alive = true;
-      fetch('posts.json?t=' + Date.now(), { cache: 'no-store' })
-        .then(r => r.ok ? r.json() : Promise.reject())
-        .catch(getPosts)
-        .then(p => { if (alive) setPosts(Array.isArray(p) ? p : []); });
+      window.loadPosts().then(p => { if (alive) setPosts(p); });
       return () => { alive = false; };
     }, []);
     return posts;
