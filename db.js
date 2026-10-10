@@ -47,6 +47,32 @@ const Db = (function () {
       return { count: count.data().count, mine: !!mine && mine.exists() };
     },
 
+    // ── Адмінка ──
+
+    // Адміністратор — той, чий акаунт записано в колекції admins
+    async isAdmin() {
+      const user = Auth.user();
+      if (!user) return false;
+      const { db, mod } = await fs();
+      return (await mod.getDoc(mod.doc(db, 'admins', user.id))).exists();
+    },
+
+    // Усе, що показує панель: користувачі, коментарі (нові першими) і кількість лайків на пост
+    async adminData() {
+      const { db, mod } = await fs();
+      const all = name => mod.getDocs(mod.collection(db, name)).then(s => s.docs.map(d => ({ ...d.data(), id: d.id })));
+      const ms  = t => t && t.toMillis ? t.toMillis() : 0;
+      const [users, comments, likes] = await Promise.all([all('users'), all('comments'), all('likes')]);
+      const likesByPost = {};
+      likes.forEach(l => { likesByPost[l.postId] = (likesByPost[l.postId] || 0) + 1; });
+      return {
+        users: users.map(u => ({ ...u, joinedAt: ms(u.joinedAt), lastLoginAt: ms(u.lastLoginAt) })),
+        comments: comments.map(c => ({ ...c, createdAt: ms(c.createdAt) })).sort((a, b) => b.createdAt - a.createdAt),
+        likes: likesByPost,
+        likesTotal: likes.length,
+      };
+    },
+
     // Один лайк на людину: документ названо «пост_користувач», тож другий поставити неможливо
     async setLike(postId, on) {
       const user = Auth.user();
