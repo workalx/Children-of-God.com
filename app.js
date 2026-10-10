@@ -27,6 +27,7 @@ window.html = htm.bind(React.createElement);
       feed_empty: "Поки що публікацій немає. Незабаром щось з'явиться! 🙏",
       feed_locked_title: 'Розділ <span>Новини</span>',
       feed_locked_desc: 'Стрічка новин зараз готується і скоро відкриється. Слідкуйте за оновленнями! 🙏',
+      post_view_all: 'Переглянути все', post_back: '← До стрічки', post_not_found: 'Публікацію не знайдено.',
       comment_placeholder: 'Написати коментар…',
       comment_login: 'Щоб коментувати — <a>увійдіть</a>',
       about_tag: 'Про нас', about_title: 'Ми — <span>Діти Божі</span>', about_badge: '🎶 Слава Господу!',
@@ -67,6 +68,7 @@ window.html = htm.bind(React.createElement);
       feed_empty: 'No posts yet. Something is coming soon! 🙏',
       feed_locked_title: '<span>News</span> Feed',
       feed_locked_desc: "The news feed is being prepared and will open soon. Stay tuned! 🙏",
+      post_view_all: 'View all', post_back: '← Back to feed', post_not_found: 'Post not found.',
       comment_placeholder: 'Write a comment…',
       comment_login: 'To comment — <a>log in</a>',
       about_tag: 'About Us', about_title: 'We are <span>Children of God</span>', about_badge: '🎶 Glory to God!',
@@ -107,6 +109,7 @@ window.html = htm.bind(React.createElement);
       feed_empty: 'Публикаций пока нет. Скоро что-то появится! 🙏',
       feed_locked_title: 'Раздел <span>Новости</span>',
       feed_locked_desc: 'Лента новостей сейчас готовится и скоро откроется. Следите за обновлениями! 🙏',
+      post_view_all: 'Смотреть все', post_back: '← К ленте', post_not_found: 'Публикация не найдена.',
       comment_placeholder: 'Написать комментарий…',
       comment_login: 'Чтобы комментировать — <a>войдите</a>',
       about_tag: 'О нас', about_title: 'Мы — <span>Дети Божьи</span>', about_badge: '🎶 Слава Господу!',
@@ -150,6 +153,17 @@ window.html = htm.bind(React.createElement);
     if (yt) return { kind: 'youtube', src: 'https://www.youtube.com/embed/' + yt[1] + '?rel=0', thumb: 'https://img.youtube.com/vi/' + yt[1] + '/hqdefault.jpg' };
     if (src.startsWith('data:video') || /\.(mp4|webm|mov|ogg)([?#]|$)/i.test(src)) return { kind: 'video', src };
     return { kind: 'image', src };
+  };
+  // Усі медіа поста: новий формат — масив media, старий — одне поле image
+  window.postMedia = function (p) {
+    if (!p) return [];
+    return (Array.isArray(p.media) && p.media.length ? p.media : [p.image]).filter(Boolean);
+  };
+  // Медіа для картки у стрічці — обрані в адмінці (до 4), інакше перші
+  window.postPreview = function (p) {
+    const all    = window.postMedia(p);
+    const picked = Array.isArray(p && p.preview) ? p.preview.filter(s => all.includes(s)) : [];
+    return (picked.length ? picked : all).slice(0, 4);
   };
 
   /* ─────────────────────────────
@@ -312,13 +326,16 @@ window.html = htm.bind(React.createElement);
   ───────────────────────────── */
   const loadedPages = {};
   const failedPages = {};
+  // сторінки, що живуть у чужому файлі: #post/<id> оголошено в pages/feed.js
+  const PAGE_FILES  = { post: 'feed' };
 
-  function PageLoader({ page }) {
+  function PageLoader({ page, param }) {
     const [Comp, setComp] = useState(null);
     const [attempt, setAttempt] = useState(0);
 
     useEffect(() => {
       let alive = true;
+      const file = PAGE_FILES[page] || page;
 
       // Always reset to spinner on page change
       setComp(null);
@@ -326,31 +343,31 @@ window.html = htm.bind(React.createElement);
       function done() {
         if (!alive) return;
         const C = window.Pages && window.Pages[page];
-        setComp(() => C || (failedPages[page] ? LoadFailed : NotFound));
+        setComp(() => C || (failedPages[file] ? LoadFailed : NotFound));
       }
 
       // Already loaded?
       if (window.Pages && window.Pages[page]) { done(); return () => { alive = false; }; }
 
       // Script in flight or needs loading
-      const existing = loadedPages[page];
+      const existing = loadedPages[file];
       const p = existing || new Promise(resolve => {
         const s = document.createElement('script');
-        s.src = 'pages/' + page + '.js';
+        s.src = 'pages/' + file + '.js';
         s.onload  = () => resolve();
         // невдалу спробу не кешуємо — інакше сторінка лишалась би «404» до перезавантаження
-        s.onerror = () => { delete loadedPages[page]; failedPages[page] = true; s.remove(); resolve(); };
-        delete failedPages[page];
+        s.onerror = () => { delete loadedPages[file]; failedPages[file] = true; s.remove(); resolve(); };
+        delete failedPages[file];
         document.body.appendChild(s);
       });
-      if (!existing) loadedPages[page] = p;
+      if (!existing) loadedPages[file] = p;
       p.then(done);
 
       return () => { alive = false; };
     }, [page, attempt]);
 
     if (!Comp) return html`<div class="page-loader">⏳</div>`;
-    return html`<${ErrorBoundary} key=${page}><${Comp} onRetry=${() => setAttempt(a => a + 1)}/><//>`;
+    return html`<${ErrorBoundary} key=${page}><${Comp} param=${param} onRetry=${() => setAttempt(a => a + 1)}/><//>`;
   }
 
   // Скрипт сторінки не завантажився: або її не існує, або зник зв'язок
@@ -397,6 +414,10 @@ window.html = htm.bind(React.createElement);
     const [showAuth, setShowAuth] = useState(false);
 
     const t = I18N[lang] || I18N.en;
+    // '#post/123' → сторінка 'post' з параметром '123'
+    const [name, ...rest] = page.split('/');
+    const param = rest.join('/');
+    const inFeed = name === 'feed' || name === 'post';
 
     const navigate = useCallback(p => {
       setPage(p);
@@ -424,9 +445,9 @@ window.html = htm.bind(React.createElement);
 
     return html`
       <${Ctx.Provider} value=${ctx}>
-        <${Nav} page=${page} navigate=${navigate}/>
+        <${Nav} page=${inFeed ? 'feed' : name} navigate=${navigate}/>
         <main>
-          ${FEED_LOCKED && page === 'feed' ? html`<${FeedLocked}/>` : html`<${PageLoader} page=${page}/>`}
+          ${FEED_LOCKED && inFeed ? html`<${FeedLocked}/>` : html`<${PageLoader} page=${name} param=${param}/>`}
         </main>
         <${Footer}/>
         ${showAuth && html`<${AuthModal}/>`}

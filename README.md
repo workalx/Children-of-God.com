@@ -6,7 +6,7 @@ A multi-page website for **"Children of God"** ("Діти Божі"), a Ukrainia
 
 - **Hash-based routing** (`#feed`, `#about`, `#donate`, `#admin`) with pages loaded on demand — no bundler, no build step
 - **Trilingual UI** — Ukrainian / English / Russian, switchable from the nav, with English as the default
-- **News feed** — Instagram-style post feed with likes and comments. Posts live in `posts.json` (media in `media/`) in this repository, so every visitor sees the same feed
+- **News feed** — Instagram-style post feed with likes and comments. Posts live in `posts.json` (media in `media/`) in this repository, so every visitor sees the same feed. A post can carry any number of photos/videos: the feed card shows the 1–4 the admin picked, and "View all" opens the post's own page (`#post/<id>`) with the full grid and a lightbox
 - **User accounts** — client-side registration/login (stored in `localStorage`/`sessionStorage`)
 - **About page** — group bio, photo gallery, embedded videos, and contact info, all lazy-rendered via `IntersectionObserver` as you scroll
 - **Donate page** — PayPal and Interac e-Transfer instructions with a thank-you modal

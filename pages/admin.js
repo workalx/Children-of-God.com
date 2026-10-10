@@ -23,6 +23,8 @@
   const POSTS_FILE   = 'posts.json';
   const MEDIA_DIR    = 'media/';
   const MAX_MEDIA_MB = 25;
+  const MAX_PREVIEW  = 4;      // скільки медіа показує картка поста у стрічці
+  const MAX_SIDE     = 2000;   // фото з камери стискаються до цієї довшої сторони
 
   function getToken()  { try { return localStorage.getItem(GH_TOKEN_KEY) || ''; } catch { return ''; } }
   function setToken(t) { try { t ? localStorage.setItem(GH_TOKEN_KEY, t) : localStorage.removeItem(GH_TOKEN_KEY); } catch {} }
@@ -74,7 +76,7 @@
   }
 
   // Завантажує data:-URL як файл у media/ і повертає шлях до нього
-  async function uploadMedia(dataUrl) {
+  async function uploadMedia(dataUrl, n = 0) {
     const comma   = dataUrl.indexOf(',');
     const content = dataUrl.slice(comma + 1);
     if (content.length * 0.75 > MAX_MEDIA_MB * 1024 * 1024) {
@@ -82,17 +84,48 @@
     }
     const sub  = dataUrl.slice(dataUrl.indexOf('/') + 1, dataUrl.indexOf(';'));
     const ext  = { jpeg: 'jpg', quicktime: 'mov', 'svg+xml': 'svg' }[sub] || sub.replace(/[^a-z0-9]/gi, '');
-    const path = MEDIA_DIR + Date.now() + '.' + ext;
+    const path = MEDIA_DIR + Date.now() + '-' + n + '.' + ext;
     await gh('PUT', path, { message: 'Додати медіа: ' + path, content });
     return path;
   }
 
-  async function removeMedia(path) {
-    if (!path || !path.startsWith(MEDIA_DIR)) return;
-    try {
-      const f = await gh('GET', path);
-      if (f) await gh('DELETE', path, { message: 'Видалити медіа: ' + path, sha: f.sha });
-    } catch {}
+  // Видаляє файли з media/ по одному: паралельні коміти в одну гілку конфліктували б
+  async function removeMedia(paths) {
+    for (const path of paths) {
+      if (!path || !path.startsWith(MEDIA_DIR)) continue;
+      try {
+        const f = await gh('GET', path);
+        if (f) await gh('DELETE', path, { message: 'Видалити медіа: ' + path, sha: f.sha });
+      } catch {}
+    }
+  }
+
+  // Читає файл як data:-URL. Великі фото зменшує до MAX_SIDE і перекодовує в JPEG:
+  // знімок з камери важить 2–3 МБ, а в пості їх буває з десяток
+  function readFile(f) {
+    return new Promise(resolve => {
+      const asIs = () => {
+        const r = new FileReader();
+        r.onload  = e => resolve(e.target.result);
+        r.onerror = () => resolve(null);
+        r.readAsDataURL(f);
+      };
+      if (!f.type.startsWith('image/') || /gif|svg/.test(f.type) || f.size < 700 * 1024) return asIs();
+      const img = new Image(), url = URL.createObjectURL(f);
+      img.onload = () => {
+        const k = Math.min(1, MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+        const c = document.createElement('canvas');
+        c.width  = Math.round(img.naturalWidth  * k);
+        c.height = Math.round(img.naturalHeight * k);
+        const g = c.getContext('2d');
+        g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+        g.drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        resolve(c.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); asIs(); };
+      img.src = url;
+    });
   }
 
   /* ── Analytics (localStorage-based visit tracking) ── */
@@ -189,16 +222,19 @@
   }
 
   /* ── DropZone ── */
-  function DropZone({ onFile }) {
+  function DropZone({ onFiles }) {
     const [over, setOver] = useState(false);
+    const [reading, setReading] = useState(false);
     const ref = useRef();
-    function handle(files) {
-      const f = files[0]; if (!f) return;
-      const isImg = f.type.startsWith('image/'), isVid = f.type.startsWith('video/');
-      if (!isImg && !isVid) return;
-      const r = new FileReader();
-      r.onload = e => onFile(e.target.result, isImg ? 'image' : 'video');
-      r.readAsDataURL(f);
+    async function handle(files) {
+      const list = [...files].filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'));
+      if (!list.length) return;
+      setReading(true);
+      const out = [];
+      for (const f of list) out.push(await readFile(f));
+      setReading(false);
+      ref.current.value = '';
+      onFiles(out.filter(Boolean));
     }
     return html`
       <div class=${'adm-drop' + (over ? ' over' : '')}
@@ -206,7 +242,7 @@
            onDragLeave=${() => setOver(false)}
            onDrop=${e => { e.preventDefault(); setOver(false); handle(e.dataTransfer.files); }}
            onClick=${() => ref.current.click()}>
-        <input type="file" ref=${ref} accept="image/*,video/*" style=${{ display: 'none' }}
+        <input type="file" ref=${ref} accept="image/*,video/*" multiple style=${{ display: 'none' }}
                onChange=${e => handle(e.target.files)}/>
         <div class="adm-drop-icon">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -214,13 +250,13 @@
             <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
         </div>
-        <div class="adm-drop-label">Перетягніть фото або відео сюди</div>
-        <div class="adm-drop-sub">або натисніть для вибору</div>
+        <div class="adm-drop-label">${reading ? 'Обробка файлів…' : 'Перетягніть фото або відео сюди'}</div>
+        <div class="adm-drop-sub">або натисніть для вибору — можна одразу кілька</div>
       </div>`;
   }
 
   /* ── PostForm ── */
-  function PostForm({ editPost, onSave, onCancel, toast, busy }) {
+  function PostForm({ editPost, onSave, onCancel, toast, busy, progress }) {
     const today = () => {
       const d = new Date();
       const m = ['січня','лютого','березня','квітня','травня','червня','липня','серпня','вересня','жовтня','листопада','грудня'];
@@ -230,20 +266,54 @@
     const [uk,    setUk]    = useState(editPost?.textUk || editPost?.text || '');
     const [en,    setEn]    = useState(editPost?.textEn || '');
     const [ru,    setRu]    = useState(editPost?.textRu || '');
-    const [media, setMedia] = useState(editPost?.image  || '');
-    const [mtype, setMtype] = useState('');
     const [url,   setUrl]   = useState('');
+    // усі медіа поста по порядку; featured — показувати на картці у стрічці
+    const [items, setItems] = useState(() => {
+      const shown = window.postPreview(editPost);
+      return window.postMedia(editPost).map(src => ({ src, featured: shown.includes(src) }));
+    });
+    const featured = items.filter(i => i.featured).length;
 
-    const preview = window.mediaInfo(media) || {};
-
-    function onFile(d, t) { setMedia(d); setMtype(t); setUrl(''); }
-    function clear()      { setMedia(''); setMtype(''); setUrl(''); }
-    function onUrl(v)     { setUrl(v); setMedia(v); setMtype('url'); }
+    // нові медіа стають «у стрічці», доки не набереться MAX_PREVIEW
+    function withAdded(cur, srcs) {
+      const next = [...cur];
+      srcs.forEach(src => {
+        if (src && !next.some(i => i.src === src)) {
+          next.push({ src, featured: next.filter(i => i.featured).length < MAX_PREVIEW });
+        }
+      });
+      return next;
+    }
+    function add(srcs)   { setItems(cur => withAdded(cur, srcs)); }
+    function addUrl()    { if (url.trim()) { add([url.trim()]); setUrl(''); } }
+    function remove(src) { setItems(cur => cur.filter(i => i.src !== src)); }
+    function toggle(it) {
+      if (!it.featured && featured >= MAX_PREVIEW) {
+        toast('У стрічці показується не більше ' + MAX_PREVIEW + ' медіа — спершу зніміть ★ з іншого', 'error');
+        return;
+      }
+      setItems(cur => cur.map(i => i.src === it.src ? { ...i, featured: !i.featured } : i));
+    }
+    function move(i, d) {
+      setItems(cur => {
+        const j = i + d;
+        if (j < 0 || j >= cur.length) return cur;
+        const next = [...cur];
+        [next[i], next[j]] = [next[j], next[i]];
+        return next;
+      });
+    }
 
     function save() {
       if (!uk && !en && !ru) { toast('Введіть текст хоча б однією мовою', 'error'); return; }
       if (!date)             { toast('Введіть дату', 'error'); return; }
-      onSave({ date, textUk: uk, textEn: en, textRu: ru, image: media });
+      // посилання, яке вставили, але не натиснули «Додати»
+      const list = withAdded(items, [url.trim()]);
+      onSave({
+        date, textUk: uk, textEn: en, textRu: ru,
+        media:   list.map(i => i.src),
+        preview: list.filter(i => i.featured).map(i => i.src),
+      });
     }
 
     return html`
@@ -277,27 +347,40 @@
         </div>
 
         <div class="adm-field">
-          <label class="adm-label">Медіа</label>
-          ${media
-            ? html`
-              <div class="adm-media-preview">
-                <button class="adm-media-clear" onClick=${clear}>✕</button>
-                ${preview.kind === 'youtube'
-                  ? html`<iframe src=${preview.src} frameBorder="0" allowFullScreen class="adm-media-el"
-                                 style=${{ height: '200px', aspectRatio: '16 / 9' }}></iframe>`
-                  : preview.kind === 'video'
-                  ? html`<video src=${media} controls class="adm-media-el"></video>`
-                  : html`<img key=${media} src=${media} class="adm-media-el" onError=${e => e.target.style.display='none'}/>`}
-              </div>`
-            : html`<${DropZone} onFile=${onFile}/>`}
+          <label class="adm-label">Медіа${items.length ? ' · ' + items.length : ''}</label>
+          ${items.length > 0 && html`
+            <div class="adm-media-grid">
+              ${items.map((it, i) => html`
+                <div class=${'adm-media-tile' + (it.featured ? ' is-featured' : '')} key=${it.src}>
+                  <${PostThumb} src=${it.src} cls="adm-media-tile-img"/>
+                  <button class="adm-media-clear" title="Прибрати з поста" onClick=${() => remove(it.src)}>✕</button>
+                  <button class="adm-media-star" onClick=${() => toggle(it)}
+                          title=${it.featured ? 'Показується на картці у стрічці — натисніть, щоб прибрати' : 'Показувати на картці у стрічці'}>
+                    ${it.featured ? '★ У стрічці' : '☆ У стрічці'}
+                  </button>
+                  <div class="adm-media-move">
+                    <button title="Перемістити раніше" disabled=${i === 0} onClick=${() => move(i, -1)}>‹</button>
+                    <span>${i + 1}</span>
+                    <button title="Перемістити далі" disabled=${i === items.length - 1} onClick=${() => move(i, 1)}>›</button>
+                  </div>
+                </div>`)}
+            </div>
+            <div class="adm-drop-sub" style=${{ margin: '.5rem 0 .8rem' }}>
+              ★ — медіа на картці у стрічці (обрано ${featured} з ${MAX_PREVIEW}). Усі ${items.length} відкриваються
+              кнопкою «Переглянути все». Стрілки ‹ › змінюють порядок.
+            </div>`}
+          <${DropZone} onFiles=${add}/>
           <div class="adm-or-line">або вставте URL</div>
-          <input class="adm-input" type="text" value=${url}
-                 placeholder="https://…" onChange=${e => onUrl(e.target.value)}/>
+          <div class="adm-url-row">
+            <input class="adm-input" type="text" value=${url} placeholder="https://… (фото, відео або YouTube)"
+                   onChange=${e => setUrl(e.target.value)} onKeyDown=${e => e.key === 'Enter' && addUrl()}/>
+            <button class="adm-btn adm-btn-ghost" onClick=${addUrl}>Додати</button>
+          </div>
         </div>
 
         <div class="adm-form-actions">
           <button class="adm-btn adm-btn-primary" onClick=${save} disabled=${busy}>
-            ${busy ? 'Публікація…' : editPost ? 'Оновити пост' : 'Опублікувати'}
+            ${busy ? (progress || 'Публікація…') : editPost ? 'Оновити пост' : 'Опублікувати'}
           </button>
           ${editPost && html`<button class="adm-btn adm-btn-ghost" onClick=${onCancel}>Скасувати</button>`}
         </div>
@@ -359,7 +442,7 @@
   }
 
   /* ── PostThumb — мініатюра поста у списку ── */
-  function PostThumb({ src }) {
+  function PostThumb({ src, cls = 'adm-post-thumb' }) {
     const [fails, setFails] = useState(0);
     const m = window.mediaInfo(src);
     if (!m) return null;
@@ -369,7 +452,7 @@
     const url    = m.kind === 'youtube' ? m.thumb : fails ? GH_RAW + m.src : m.src;
     const onFail = () => setFails(n => n + 1);
     return html`
-      <div class="adm-post-thumb">
+      <div class=${cls}>
         ${m.kind === 'video'
           ? html`<video src=${url} muted preload="metadata" onError=${onFail}></video>`
           : html`<img src=${url} alt="" onError=${onFail}/>`}
@@ -393,15 +476,17 @@
         ${posts.map(p => {
           const text = p.textEn || p.textUk || p.textRu || p.text || '';
           const cmts = getComments()[p.id]?.length || 0;
+          const media = window.postMedia(p);
           return html`
             <div class="adm-post-row" key=${p.id}>
-              <${PostThumb} key=${p.image} src=${p.image}/>
+              <${PostThumb} key=${media[0]} src=${media[0]}/>
               <div class="adm-post-row-meta">
                 <span class="adm-post-row-date">${p.date}</span>
                 <span class="adm-post-row-text">${text.length > 100 ? text.slice(0, 100) + '…' : text}</span>
                 <div class="adm-badges-row">
                   <span class="adm-chip">♡ ${p.likes || 0}</span>
                   <span class="adm-chip">💬 ${cmts}</span>
+                  ${media.length > 1 && html`<span class="adm-chip">🖼 ${media.length}</span>`}
                   ${p.textUk && html`<span class="adm-chip adm-chip--lang">UA</span>`}
                   ${p.textEn && html`<span class="adm-chip adm-chip--lang">EN</span>`}
                   ${p.textRu && html`<span class="adm-chip adm-chip--lang">RU</span>`}
@@ -722,6 +807,7 @@
     const [lastUpdate, setLastUpdate] = useState(new Date());
     const [toast,      toastEl]       = useToast();
     const [busy,       setBusy]       = useState(false);
+    const [progress,   setProgress]   = useState('');
     const [formKey,    setFormKey]    = useState(0);
     const [connected,  setConnected]  = useState(() => !!getToken());
 
@@ -751,19 +837,36 @@
     async function handleSave(data) {
       if (busy || needToken()) return;
       setBusy(true);
+      let uploaded = [];   // файли, які треба прибрати, якщо публікація зірветься
       try {
-        if (data.image.startsWith('data:')) data = { ...data, image: await uploadMedia(data.image) };
+        const fresh = data.media.filter(s => s.startsWith('data:'));
+        const paths = {};
+        for (let i = 0; i < fresh.length; i++) {
+          setProgress('Завантаження медіа ' + (i + 1) + ' з ' + fresh.length + '…');
+          paths[fresh[i]] = await uploadMedia(fresh[i], i);
+          uploaded.push(paths[fresh[i]]);
+        }
+        setProgress('');
+        const media   = data.media.map(s => paths[s] || s);
+        const preview = data.preview.map(s => paths[s] || s);
+        // image — перше медіа картки: для мініатюр і для старих версій стрічки
+        const post = { ...data, media, preview, image: preview[0] || media[0] || '' };
         if (editing) {
-          await updatePosts(all => all.map(p => p.id === editing.id ? { ...p, ...data } : p), 'Оновити пост');
-          if (editing.image !== data.image) removeMedia(editing.image);
+          await updatePosts(all => all.map(p => p.id === editing.id ? { ...p, ...post } : p), 'Оновити пост');
+          uploaded = [];
           toast('Пост оновлено');
+          await removeMedia(window.postMedia(editing).filter(s => !media.includes(s)));
         } else {
-          await updatePosts(all => [{ id: Date.now(), likes: 0, ...data }, ...all], 'Новий пост');
+          await updatePosts(all => [{ id: Date.now(), likes: 0, ...post }, ...all], 'Новий пост');
+          uploaded = [];
           toast('Пост опубліковано — з\'явиться на сайті за 1–2 хв');
         }
         refresh(); setEditing(null); setFormKey(k => k + 1);
-      } catch (e) { toast(e.message, 'error'); }
-      setBusy(false);
+      } catch (e) {
+        toast(e.message, 'error');
+        await removeMedia(uploaded);
+      }
+      setProgress(''); setBusy(false);
     }
 
     async function handleDelete(id) {
@@ -772,8 +875,8 @@
       try {
         const post = getPosts().find(p => p.id === id);
         await updatePosts(all => all.filter(p => p.id !== id), 'Видалити пост');
-        removeMedia(post?.image);
         refresh(); toast('Пост видалено');
+        await removeMedia(window.postMedia(post));
       } catch (e) { toast(e.message, 'error'); }
       setBusy(false);
     }
@@ -877,7 +980,7 @@
               <div>
                 <${GitHubConnect} connected=${connected} toast=${toast}
                                   onChange=${() => setConnected(!!getToken())}/>
-                <${PostForm} key=${editing?.id || 'new' + formKey} editPost=${editing} busy=${busy}
+                <${PostForm} key=${editing?.id || 'new' + formKey} editPost=${editing} busy=${busy} progress=${progress}
                              onSave=${handleSave} onCancel=${() => setEditing(null)} toast=${toast}/>
                 <p class="adm-section-title" style=${{ marginTop: '2rem' }}>
                   Всі пости${' '}<span class="adm-badge-gold">${posts.length}</span>
