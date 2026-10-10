@@ -561,6 +561,8 @@ window.html = htm.bind(React.createElement);
       return () => document.removeEventListener('visibilitychange', fn);
     }, [user && user.id, user && user.verified]);
 
+    useEffect(() => { Db.track(name); }, [name]);
+
     // expose openAuthModal globally (used in page components)
     useEffect(() => { window.openAuthModal = () => setShowAuth(true); }, []);
 

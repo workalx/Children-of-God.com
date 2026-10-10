@@ -47,12 +47,32 @@ service cloud.firestore {
     // Лайк — документ із назвою «пост_користувач», тому на один пост від людини він один
     match /likes/{id} {
       allow read: if true;
-      allow create: if signedIn()
-        && request.resource.data.keys().hasOnly(['postId', 'uid'])
+      allow create, update: if signedIn()
+        && request.resource.data.keys().hasOnly(['postId', 'uid', 'createdAt'])
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.postId is string && request.resource.data.postId.size() <= 40
+        && (!('createdAt' in request.resource.data) || request.resource.data.createdAt == request.time)
         && id == request.resource.data.postId + '_' + request.auth.uid;
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // Лічильники відвідувань, один документ на день. Писати може будь-хто, але тільки
+    // додаючи по одиниці до дозволених полів; читає лише адміністратор
+    match /stats/{day} {
+      function fields() { return ['views', 'visitors', 'feed', 'about', 'donate', 'gallery', 'videos']; }
+      function startsAtOne(k) { return !(k in request.resource.data) || request.resource.data[k] == 1; }
+      function plusOne(k) {
+        return !(k in request.resource.data) || request.resource.data[k] == resource.data.get(k, 0)
+          || request.resource.data[k] == resource.data.get(k, 0) + 1;
+      }
+      allow read: if isAdmin();
+      allow create: if day.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && request.resource.data.keys().hasOnly(fields())
+        && startsAtOne('views') && startsAtOne('visitors') && startsAtOne('feed') && startsAtOne('about')
+        && startsAtOne('donate') && startsAtOne('gallery') && startsAtOne('videos');
+      allow update: if request.resource.data.keys().hasOnly(fields())
+        && plusOne('views') && plusOne('visitors') && plusOne('feed') && plusOne('about')
+        && plusOne('donate') && plusOne('gallery') && plusOne('videos');
     }
   }
 }
