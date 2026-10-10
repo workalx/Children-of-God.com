@@ -36,6 +36,7 @@
 
   /* ── Comments section ── */
   function Comments({ postId, lang, t, user }) {
+    const { blocked } = Ctx();
     const [list,  setList]  = useState([]);
     const [draft, setDraft] = useState('');
     const [busy,  setBusy]  = useState(false);
@@ -73,7 +74,9 @@
             <${CommentItem} key=${c.id} c=${c} lang=${lang} currentUser=${user} onDelete=${del}/>`)}
         </div>
         ${failed && html`<div class="comment-error">${t.comment_error} (${failed})</div>`}
-        ${user && user.verified
+        ${blocked
+          ? html`<div class="comment-login-prompt">${t.comment_blocked}</div>`
+          : user && user.verified
           ? html`
             <div class="comment-input-row">
               <input class="comment-input" value=${draft} maxlength="1000"
@@ -156,7 +159,7 @@
      У стрічці показує обрані 1–4 медіа і кнопку «Переглянути все»;
      full — сторінка поста з усіма медіа */
   function PostCard({ p, idx, lang, t, user, navLogo, full }) {
-    const { navigate } = Ctx();
+    const { navigate, blocked } = Ctx();
     const [liked, setLiked] = useState(false);
     const [likes, setLikes] = useState(0);
     const [open,  setOpen]  = useState(null);   // індекс медіа в лайтбоксі
@@ -181,6 +184,7 @@
 
     function toggleLike() {
       if (!user) { window.openAuthModal(); return; }
+      if (blocked) return;
       const next = !liked;
       const show = on => { setLiked(on); setLikes(l => Math.max(0, l + (on ? 1 : -1))); };
       show(next); setLikeFailed('');

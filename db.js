@@ -51,6 +51,14 @@ const Db = (function () {
       return { count: count.data().count, mine: !!mine && mine.exists() };
     },
 
+    // Чи заблоковано поточного користувача: тоді база не прийме від нього ні коментар, ні лайк
+    async amBlocked() {
+      const user = Auth.user();
+      if (!user) return false;
+      const { db, mod } = await fs();
+      return (await mod.getDoc(mod.doc(db, 'blocked', user.id))).exists();
+    },
+
     // ── Статистика ──
 
     // Зараховує перегляд сторінки в лічильник за сьогодні (stats/РРРР-ММ-ДД).
@@ -90,7 +98,10 @@ const Db = (function () {
       const ms  = t => t && t.toMillis ? t.toMillis() : 0;
       const since = new Date(Date.now() - 29 * 864e5).toISOString().slice(0, 10);
       const recentStats = mod.getDocs(mod.query(mod.collection(db, 'stats'), mod.where(mod.documentId(), '>=', since)));
-      const [users, comments, likes, statDocs] = await Promise.all([all('users'), all('comments'), all('likes'), recentStats]);
+      const [users, comments, likes, statDocs, blocked] =
+        await Promise.all([all('users'), all('comments'), all('likes'), recentStats,
+          // поки нові правила бази не опубліковано, список блокувань недоступний — решта панелі має працювати
+          all('blocked').catch(() => [])]);
       const stats = {};
       statDocs.docs.forEach(d => { stats[d.id] = d.data(); });
       const likesByPost = {};
@@ -101,8 +112,23 @@ const Db = (function () {
         likes: likesByPost,
         likesTotal: likes.length,
         likeTimes: likes.map(l => ms(l.createdAt)).filter(Boolean),
+        blocked: blocked.map(b => b.id),
         stats,   // лічильники відвідувань за останні 30 днів: { 'РРРР-ММ-ДД': { views, visitors, feed, … } }
       };
+    },
+
+    async setBlocked(uid, on) {
+      const { db, mod } = await fs();
+      const ref = mod.doc(db, 'blocked', uid);
+      await (on ? mod.setDoc(ref, { by: Auth.user().id, at: mod.serverTimestamp() }) : mod.deleteDoc(ref));
+    },
+
+    // Видаляє всі коментарі користувача; повертає, скільки їх було
+    async deleteUserComments(uid) {
+      const { db, mod } = await fs();
+      const snap = await mod.getDocs(mod.query(mod.collection(db, 'comments'), mod.where('uid', '==', uid)));
+      await Promise.all(snap.docs.map(d => mod.deleteDoc(d.ref)));
+      return snap.size;
     },
 
     // Один лайк на людину: документ названо «пост_користувач», тож другий поставити неможливо

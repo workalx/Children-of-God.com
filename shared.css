@@ -1043,6 +1043,9 @@ body.is-admin main { padding: 0; }
   background: #21262d; border-radius: 4px; padding: 1px 6px;
 }
 .adm-chip--lang { color: #d4a017; background: rgba(212,160,23,.08); }
+.adm-chip--blocked { color: #f85149; background: rgba(248,81,73,.1); }
+.adm-user-note { display: block; margin-top: .8rem; font-size: .74rem; color: #8b949e; text-align: center; text-decoration: none; }
+a.adm-user-note:hover { color: #d4a017; }
 
 /* Toolbar (search row) */
 .adm-toolbar {

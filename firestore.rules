@@ -12,6 +12,8 @@ service cloud.firestore {
       return signedIn() && (request.auth.token.email_verified == true
         || request.auth.token.firebase.sign_in_provider != 'password');
     }
+    // заблокований адміністратором: читати може, писати коментарі й ставити лайки — ні
+    function isBlocked() { return exists(/databases/$(database)/documents/blocked/$(request.auth.uid)); }
     function isAdmin()  { return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
 
     // Картка користувача: пише лише власник, читає власник і адміністратор
@@ -30,10 +32,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Блокування: ставить і знімає адміністратор; сам користувач бачить лише власне
+    match /blocked/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create, update, delete: if isAdmin();
+    }
+
     // Коментарі читають усі; пише той, хто підтвердив пошту; видаляє автор або адміністратор
     match /comments/{id} {
       allow read: if true;
-      allow create: if verified()
+      allow create: if verified() && !isBlocked()
         && request.resource.data.keys().hasOnly(['postId', 'uid', 'username', 'text', 'createdAt'])
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.postId is string && request.resource.data.postId.size() <= 40
@@ -47,7 +55,7 @@ service cloud.firestore {
     // Лайк — документ із назвою «пост_користувач», тому на один пост від людини він один
     match /likes/{id} {
       allow read: if true;
-      allow create, update: if signedIn()
+      allow create, update: if signedIn() && !isBlocked()
         && request.resource.data.keys().hasOnly(['postId', 'uid', 'createdAt'])
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.postId is string && request.resource.data.postId.size() <= 40

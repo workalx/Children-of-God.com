@@ -6,7 +6,9 @@
   function getPosts()      { try { return JSON.parse(localStorage.getItem('ditibozhi_posts')    || '[]'); } catch { return []; } }
   function savePosts(p)    { localStorage.setItem('ditibozhi_posts', JSON.stringify(p)); }
   // Користувачі, коментарі й лайки приходять із Firestore (Db.adminData); це вигляд «ще не завантажено»
-  const NO_DATA = { users: [], comments: [], likes: {}, likesTotal: 0, likeTimes: [], stats: {} };
+  const NO_DATA = { users: [], comments: [], likes: {}, likesTotal: 0, likeTimes: [], stats: {}, blocked: [] };
+  // сторінка консолі Firebase, де акаунт можна видалити остаточно
+  const FB_USERS_URL = 'https://console.firebase.google.com/project/' + FIREBASE_CONFIG.projectId + '/authentication/users';
 
   /* ── GitHub — спільне сховище постів ──
      Пости лежать у posts.json в репозиторії (медіа — у media/), тому їх бачать усі
@@ -609,9 +611,12 @@
   }
 
   /* ── Users ── */
-  function UsersView({ data }) {
+  function UsersView({ data, toast, onChange }) {
     const [sel, setSel]       = useState(null);
     const [query, setQuery]   = useState('');
+    const [busy, setBusy]     = useState(false);
+    const isBlocked           = u => data.blocked.includes(u.id);
+    const me                  = Auth.user();
     const users               = [...data.users].sort((a, b) => b.joinedAt - a.joinedAt);
     const PROVIDERS           = { password: 'Email і пароль', 'google.com': 'Google', 'github.com': 'GitHub' };
 
@@ -622,6 +627,26 @@
     const joinedFull  = u => u.joinedAt ? new Date(u.joinedAt).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long',  year: 'numeric' }) : '—';
     const joinedShort = u => u.joinedAt ? new Date(u.joinedAt).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
     const userCmts    = u => data.comments.filter(c => c.uid === u.id).length;
+    const lastSeen    = u => u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString('uk-UA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+
+    // кожна дія: блокуємо кнопки, показуємо результат, перечитуємо дані з бази
+    async function act(fn, done) {
+      if (busy) return;
+      setBusy(true);
+      try { toast(done(await fn())); }
+      catch (e) { toast('Не вдалося (' + (e.code || e.message) + ')', 'error'); }
+      await onChange();
+      setBusy(false);
+    }
+    function toggleBlock(u) {
+      const on = !isBlocked(u);
+      if (on && !confirm('Заблокувати ' + u.username + '? Людина не зможе коментувати й ставити лайки.')) return;
+      act(() => Db.setBlocked(u.id, on), () => on ? 'Користувача заблоковано' : 'Користувача розблоковано');
+    }
+    function wipeComments(u) {
+      if (!confirm('Видалити всі коментарі користувача ' + u.username + ' (' + userCmts(u) + ')? Це не можна скасувати.')) return;
+      act(() => Db.deleteUserComments(u.id), n => 'Видалено коментарів: ' + n);
+    }
 
     if (!users.length) return html`<div class="adm-empty">Зареєстрованих користувачів ще немає.</div>`;
 
@@ -651,6 +676,7 @@
                       <div class="adm-td-user">
                         <div class="adm-ava adm-ava--xs">${u.username[0].toUpperCase()}</div>
                         <span class="adm-td-name">${u.username}</span>
+                        ${isBlocked(u) && html`<span class="adm-chip adm-chip--blocked">заблоковано</span>`}
                       </div>
                     </td>
                     <td class="adm-td-muted">${u.email}</td>
@@ -677,6 +703,10 @@
                   <a class="adm-user-email-link" href=${'mailto:' + sel.email}>${sel.email}</a>
                 </div>
                 <div class="adm-user-detail-row">
+                  <span class="adm-label">Останній вхід</span>
+                  <span class="adm-user-detail-val">${lastSeen(sel)}</span>
+                </div>
+                <div class="adm-user-detail-row">
                   <span class="adm-label">Спосіб входу</span>
                   <span class="adm-user-detail-val">${PROVIDERS[sel.provider] || sel.provider || '—'}</span>
                 </div>
@@ -687,6 +717,20 @@
               </div>
               <a class="adm-btn adm-btn-primary adm-user-mail-btn" href=${'mailto:' + sel.email}>
                 Написати листа
+              </a>
+              ${me && me.id === sel.id
+                ? html`<div class="adm-user-note">Це ваш акаунт.</div>`
+                : html`
+                  <button class=${'adm-btn adm-user-mail-btn ' + (isBlocked(sel) ? 'adm-btn-ghost' : 'adm-btn-danger')}
+                          disabled=${busy} onClick=${() => toggleBlock(sel)}>
+                    ${isBlocked(sel) ? 'Розблокувати' : 'Заблокувати'}
+                  </button>`}
+              ${userCmts(sel) > 0 && html`
+                <button class="adm-btn adm-btn-danger adm-user-mail-btn" disabled=${busy} onClick=${() => wipeComments(sel)}>
+                  Видалити всі коментарі (${userCmts(sel)})
+                </button>`}
+              <a class="adm-user-note" href=${FB_USERS_URL} target="_blank" rel="noopener">
+                Видалити акаунт остаточно можна в консолі Firebase →
               </a>
             </div>`}
         </div>
@@ -954,7 +998,7 @@
                 </p>
                 <${PostList} posts=${posts} data=${data} onEdit=${goEdit} onDelete=${handleDelete}/>
               </div>`}
-            ${tab === 'users'    && html`<${UsersView} data=${data}/>`}
+            ${tab === 'users'    && html`<${UsersView} data=${data} toast=${toast} onChange=${loadData}/>`}
             ${tab === 'comments' && html`<${CommentsView} toast=${toast} data=${data} onChange=${loadData}/>`}
           </div>
         </div>
