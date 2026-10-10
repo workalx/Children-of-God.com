@@ -11,7 +11,7 @@ A multi-page website for **"Children of God"** ("Діти Божі"), a Ukrainia
 - **About page** — group bio, photo gallery, embedded videos, and contact info, all lazy-rendered via `IntersectionObserver` as you scroll
 - **Gallery and videos pages** — the gallery (`#gallery`) shows every photo published in a post followed by the archive in `img/`; the videos page (`#videos`) shows the pinned videos plus every YouTube link added to a post
 - **Donate page** — PayPal and Interac e-Transfer instructions with a thank-you modal
-- **Password-protected admin panel** (`#admin`) — drag-and-drop photo/video upload for publishing new feed posts. Publishing commits `posts.json` and the media file to this repository through the GitHub API, so the admin pastes a fine-grained GitHub token once per device (Contents: Read and write on this repo only; kept in that browser's `localStorage`). New posts go live after GitHub Pages redeploys, about 1–2 minutes
+- **Admin panel** (`#admin`) — opens for a signed-in account listed in the Firestore `admins` collection; shows registered users, all comments (with delete) and like counts. Drag-and-drop photo/video upload for publishing new feed posts. Publishing commits `posts.json` and the media file to this repository through the GitHub API, so the admin pastes a fine-grained GitHub token once per device (Contents: Read and write on this repo only; kept in that browser's `localStorage`). New posts go live after GitHub Pages redeploys, about 1–2 minutes
 
 > **Note:** the news feed is the home page — opening the site without a hash lands on `#feed`. To temporarily lock it (shows a "coming soon" placeholder, hides it from navigation and makes `#about` the home page), flip `FEED_LOCKED` to `true` near the top of `app.js`.
 
@@ -35,7 +35,7 @@ pages/
   feed.js          News feed (loaded on #feed)
   about.js         About + Gallery + Videos + Contact (loaded on #about), all-videos page (#videos)
   donate.js        Donation page (loaded on #donate)
-  admin.js         Password-protected admin panel (loaded on #admin)
+  admin.js         Admin panel for accounts listed as admins (loaded on #admin)
   gallery.js        Full photo gallery view
 img/               Gallery photos + gallery.json
 ```

@@ -12,6 +12,12 @@
     return p.textUk || p.text || '';
   }
 
+  // Код помилки показуємо поруч із повідомленням: за ним видно, що саме відхилила база
+  function saveError(e) {
+    console.warn('Firestore:', e);
+    return (e && (e.code || e.message)) || 'unknown';
+  }
+
   /* ── Comment item ── */
   function CommentItem({ c, lang, currentUser, onDelete }) {
     const date = new Date(c.createdAt).toLocaleDateString({ uk: 'uk-UA', ru: 'ru-RU' }[lang] || 'en-GB');
@@ -33,11 +39,11 @@
     const [list,  setList]  = useState([]);
     const [draft, setDraft] = useState('');
     const [busy,  setBusy]  = useState(false);
-    const [failed, setFailed] = useState(false);
+    const [failed, setFailed] = useState('');   // код помилки Firebase, якщо зберегти не вдалося
 
     useEffect(() => {
       let alive = true;
-      Db.comments(postId).then(l => { if (alive) setList(l); }, () => {});
+      Db.comments(postId).then(l => { if (alive) setList(l); }, saveError);
       return () => { alive = false; };
     }, [postId]);
 
@@ -48,16 +54,16 @@
       try {
         const c = await Db.addComment(postId, text);
         setList(l => [...l, c]);
-        setDraft(''); setFailed(false);
-      } catch (e) { setFailed(true); }
+        setDraft(''); setFailed('');
+      } catch (e) { setFailed(saveError(e)); }
       setBusy(false);
     }
     async function del(id) {
       try {
         await Db.deleteComment(id);
         setList(l => l.filter(c => c.id !== id));
-        setFailed(false);
-      } catch (e) { setFailed(true); }
+        setFailed('');
+      } catch (e) { setFailed(saveError(e)); }
     }
 
     return html`
@@ -66,7 +72,7 @@
           ${list.map(c => html`
             <${CommentItem} key=${c.id} c=${c} lang=${lang} currentUser=${user} onDelete=${del}/>`)}
         </div>
-        ${failed && html`<div class="comment-error">${t.comment_error}</div>`}
+        ${failed && html`<div class="comment-error">${t.comment_error} (${failed})</div>`}
         ${user && user.verified
           ? html`
             <div class="comment-input-row">
@@ -154,13 +160,14 @@
     const [liked, setLiked] = useState(false);
     const [likes, setLikes] = useState(0);
     const [open,  setOpen]  = useState(null);   // індекс медіа в лайтбоксі
+    const [likeFailed, setLikeFailed] = useState('');
     const postId = String(p.id || idx);
     const uid    = user ? user.id : null;
 
     // лічильник спільний для всіх; після входу чи виходу перечитуємо, чи є тут мій лайк
     useEffect(() => {
       let alive = true;
-      Db.likes(postId).then(r => { if (alive) { setLikes(r.count); setLiked(r.mine); } }, () => {});
+      Db.likes(postId).then(r => { if (alive) { setLikes(r.count); setLiked(r.mine); } }, saveError);
       return () => { alive = false; };
     }, [postId, uid]);
     const text   = getPostText(p, lang);
@@ -176,9 +183,9 @@
       if (!user) { window.openAuthModal(); return; }
       const next = !liked;
       const show = on => { setLiked(on); setLikes(l => Math.max(0, l + (on ? 1 : -1))); };
-      show(next);
+      show(next); setLikeFailed('');
       // показуємо одразу; якщо зберегти не вдалося — повертаємо як було
-      Db.setLike(postId, next).catch(() => show(!next));
+      Db.setLike(postId, next).catch(e => { show(!next); setLikeFailed(saveError(e)); });
     }
 
     const media = all.length === 0 ? null
@@ -214,6 +221,7 @@
           <button class=${'post-like' + (liked ? ' liked' : '')} onClick=${toggleLike}>
             <span>${liked ? '❤️' : '🤍'}</span> <span>${likes}</span>
           </button>
+          ${likeFailed && html`<span class="comment-error">${t.comment_error} (${likeFailed})</span>`}
         </div>
         <${Comments} postId=${postId} lang=${lang} t=${t} user=${user}/>
         ${open !== null && html`<${Lightbox} items=${all} start=${open} onClose=${() => setOpen(null)}/>`}

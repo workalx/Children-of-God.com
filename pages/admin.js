@@ -3,13 +3,10 @@
   const { useState, useEffect, useRef } = React;
   const html = window.html;
 
-  const ADMIN_PASSWORD = 'alexh.20';
-
   function getPosts()      { try { return JSON.parse(localStorage.getItem('ditibozhi_posts')    || '[]'); } catch { return []; } }
   function savePosts(p)    { localStorage.setItem('ditibozhi_posts', JSON.stringify(p)); }
-  function getUsers()      { try { return JSON.parse(localStorage.getItem('ditibozhi_users')    || '[]'); } catch { return []; } }
-  function getComments()   { try { return JSON.parse(localStorage.getItem('ditibozhi_comments') || '{}'); } catch { return {}; } }
-  function saveComments(c) { localStorage.setItem('ditibozhi_comments', JSON.stringify(c)); }
+  // Користувачі, коментарі й лайки приходять із Firestore (Db.adminData); це вигляд «ще не завантажено»
+  const NO_DATA = { users: [], comments: [], likes: {}, likesTotal: 0 };
 
   /* ── GitHub — спільне сховище постів ──
      Пости лежать у posts.json в репозиторії (медіа — у media/), тому їх бачать усі
@@ -460,7 +457,7 @@
   }
 
   /* ── PostList ── */
-  function PostList({ posts, onEdit, onDelete }) {
+  function PostList({ posts, data, onEdit, onDelete }) {
     if (!posts.length) return html`
       <div class="adm-empty">
         <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"
@@ -475,7 +472,7 @@
       <div class="adm-post-list">
         ${posts.map(p => {
           const text = p.textEn || p.textUk || p.textRu || p.text || '';
-          const cmts = getComments()[p.id]?.length || 0;
+          const cmts = data.comments.filter(c => c.postId === String(p.id)).length;
           const media = window.postMedia(p);
           return html`
             <div class="adm-post-row" key=${p.id}>
@@ -484,7 +481,7 @@
                 <span class="adm-post-row-date">${p.date}</span>
                 <span class="adm-post-row-text">${text.length > 100 ? text.slice(0, 100) + '…' : text}</span>
                 <div class="adm-badges-row">
-                  <span class="adm-chip">♡ ${p.likes || 0}</span>
+                  <span class="adm-chip">♡ ${data.likes[p.id] || 0}</span>
                   <span class="adm-chip">💬 ${cmts}</span>
                   ${media.length > 1 && html`<span class="adm-chip">🖼 ${media.length}</span>`}
                   ${p.textUk && html`<span class="adm-chip adm-chip--lang">UA</span>`}
@@ -502,13 +499,12 @@
   }
 
   /* ── Dashboard ── */
-  function Dashboard({ posts, onTab }) {
-    const users    = getUsers();
-    const comments = getComments();
+  function Dashboard({ posts, data, onTab }) {
+    const users     = data.users;
     const analytics = ensureAnalytics();
 
-    const totalComments = Object.values(comments).reduce((n, a) => n + (a?.length || 0), 0);
-    const totalLikes    = posts.reduce((n, p) => n + (p.likes || 0), 0);
+    const totalComments = data.comments.length;
+    const totalLikes    = data.likesTotal;
 
     const now = new Date();
     const last30 = [], spark14 = [];
@@ -612,7 +608,7 @@
                   <div class="adm-recent-dot" style=${{ background: '#d4a017' }}></div>
                   <div class="adm-recent-body">
                     <div class="adm-recent-title">${txt}${txt.length >= 65 ? '…' : ''}</div>
-                    <div class="adm-recent-meta">${p.date}${' '}·${' '}♡ ${p.likes || 0}</div>
+                    <div class="adm-recent-meta">${p.date}${' '}·${' '}♡ ${data.likes[p.id] || 0}</div>
                   </div>
                 </div>`;
             }) : html`<div class="adm-empty" style=${{ padding: '.75rem 0' }}>Постів ще немає.</div>`}
@@ -643,11 +639,11 @@
   }
 
   /* ── Users ── */
-  function UsersView() {
+  function UsersView({ data }) {
     const [sel, setSel]       = useState(null);
     const [query, setQuery]   = useState('');
-    const users               = getUsers();
-    const allComments         = getComments();
+    const users               = [...data.users].sort((a, b) => b.joinedAt - a.joinedAt);
+    const PROVIDERS           = { password: 'Email і пароль', 'google.com': 'Google', 'github.com': 'GitHub' };
 
     const list = users.filter(u =>
       !query || u.username.toLowerCase().includes(query.toLowerCase()) || u.email.toLowerCase().includes(query.toLowerCase())
@@ -655,7 +651,7 @@
 
     const joinedFull  = u => u.joinedAt ? new Date(u.joinedAt).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long',  year: 'numeric' }) : '—';
     const joinedShort = u => u.joinedAt ? new Date(u.joinedAt).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
-    const userCmts    = u => Object.values(allComments).reduce((n, a) => n + (a?.filter(c => c.userId === u.id).length || 0), 0);
+    const userCmts    = u => data.comments.filter(c => c.uid === u.id).length;
 
     if (!users.length) return html`<div class="adm-empty">Зареєстрованих користувачів ще немає.</div>`;
 
@@ -711,6 +707,10 @@
                   <a class="adm-user-email-link" href=${'mailto:' + sel.email}>${sel.email}</a>
                 </div>
                 <div class="adm-user-detail-row">
+                  <span class="adm-label">Спосіб входу</span>
+                  <span class="adm-user-detail-val">${PROVIDERS[sel.provider] || sel.provider || '—'}</span>
+                </div>
+                <div class="adm-user-detail-row">
                   <span class="adm-label">Коментарів</span>
                   <span class="adm-user-detail-val">${userCmts(sel)}</span>
                 </div>
@@ -724,34 +724,25 @@
   }
 
   /* ── Comments ── */
-  function CommentsView({ toast, tick }) {
+  function CommentsView({ toast, data, onChange }) {
     const posts = getPosts();
-    const [cmts, setCmts]   = useState(getComments);
     const [query, setQuery] = useState('');
 
-    useEffect(() => { setCmts(getComments()); }, [tick]);
-
-    const flat = [];
-    posts.forEach(p => {
-      const pt = (p.textEn || p.textUk || p.text || '').slice(0, 55);
-      (cmts[p.id] || []).forEach(c => flat.push({ ...c, postId: p.id, postText: pt }));
-    });
-    flat.sort((a, b) => new Date(b.date) - new Date(a.date));
+    const postText = {};
+    posts.forEach(p => { postText[p.id] = (p.textEn || p.textUk || p.text || '').slice(0, 55); });
+    const flat = data.comments.map(c => ({ ...c, postText: postText[c.postId] || 'видалений пост' }));
 
     const list = flat.filter(c =>
       !query || c.text.toLowerCase().includes(query.toLowerCase()) || c.username.toLowerCase().includes(query.toLowerCase())
     );
 
-    function del(postId, id) {
+    async function del(id) {
       if (!confirm('Видалити цей коментар?')) return;
-      const updated = getComments();
-      if (updated[postId]) {
-        updated[postId] = updated[postId].filter(c => c.id !== id);
-        if (!updated[postId].length) delete updated[postId];
-      }
-      saveComments(updated);
-      setCmts(getComments());
-      toast('Коментар видалено');
+      try {
+        await Db.deleteComment(id);
+        toast('Коментар видалено');
+      } catch (e) { toast('Не вдалося видалити коментар (' + (e.code || e.message) + ')', 'error'); }
+      onChange();
     }
 
     const fmt = d => { try { return new Date(d).toLocaleString('uk-UA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch { return d || '—'; } };
@@ -784,7 +775,7 @@
                   <div class="adm-cmt-body">
                     <div class="adm-cmt-head">
                       <span class="adm-td-name">${c.username}</span>
-                      <span class="adm-cmt-date">${fmt(c.date)}</span>
+                      <span class="adm-cmt-date">${fmt(c.createdAt)}</span>
                     </div>
                     <div class="adm-cmt-text">${c.text}</div>
                     <div class="adm-cmt-ref">
@@ -792,7 +783,7 @@
                     </div>
                   </div>
                   <button class="adm-btn adm-btn-sm adm-btn-danger"
-                          onClick=${() => del(c.postId, c.id)}>Видалити</button>
+                          onClick=${() => del(c.id)}>Видалити</button>
                 </div>`)}
             </div>`}
       </div>`;
@@ -810,6 +801,7 @@
     const [progress,   setProgress]   = useState('');
     const [formKey,    setFormKey]    = useState(0);
     const [connected,  setConnected]  = useState(() => !!getToken());
+    const [data,       setData]       = useState(NO_DATA);
 
     function refresh() {
       setPosts(getPosts());
@@ -817,8 +809,14 @@
       setLastUpdate(new Date());
     }
 
+    // Користувачі, коментарі й лайки з Firestore
+    function loadData() {
+      return Db.adminData().then(setData, e => toast('Не вдалося завантажити дані з бази (' + (e.code || e.message) + ')', 'error'));
+    }
+
     // Підтягує пости з GitHub у локальний кеш і перемальовує панель
     function sync() {
+      loadData();
       return pullPosts().then(refresh, e => { refresh(); toast(e.message, 'error'); });
     }
 
@@ -884,18 +882,14 @@
     function goEdit(p) { setTab('posts'); setEditing(p); }
     function goTab(t)  { setTab(t); setEditing(null); }
 
-    const users    = getUsers();
-    const comments = getComments();
-    const totalCmts = Object.values(comments).reduce((n, a) => n + (a?.length || 0), 0);
-
     const TABS = [
       { id: 'dashboard', label: 'Дашборд',
         icon: html`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>` },
       { id: 'posts', label: 'Пости', count: posts.length,
         icon: html`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>` },
-      { id: 'users', label: 'Користувачі', count: users.length,
+      { id: 'users', label: 'Користувачі', count: data.users.length,
         icon: html`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>` },
-      { id: 'comments', label: 'Коментарі', count: totalCmts,
+      { id: 'comments', label: 'Коментарі', count: data.comments.length,
         icon: html`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>` },
     ];
 
@@ -975,7 +969,7 @@
           </header>
 
           <div class="adm-content">
-            ${tab === 'dashboard' && html`<${Dashboard} posts=${posts} onTab=${goTab} tick=${tick}/>`}
+            ${tab === 'dashboard' && html`<${Dashboard} posts=${posts} data=${data} onTab=${goTab} tick=${tick}/>`}
             ${tab === 'posts' && html`
               <div>
                 <${GitHubConnect} connected=${connected} toast=${toast}
@@ -985,10 +979,10 @@
                 <p class="adm-section-title" style=${{ marginTop: '2rem' }}>
                   Всі пости${' '}<span class="adm-badge-gold">${posts.length}</span>
                 </p>
-                <${PostList} posts=${posts} onEdit=${goEdit} onDelete=${handleDelete}/>
+                <${PostList} posts=${posts} data=${data} onEdit=${goEdit} onDelete=${handleDelete}/>
               </div>`}
-            ${tab === 'users'    && html`<${UsersView} tick=${tick}/>`}
-            ${tab === 'comments' && html`<${CommentsView} toast=${toast} tick=${tick}/>`}
+            ${tab === 'users'    && html`<${UsersView} data=${data}/>`}
+            ${tab === 'comments' && html`<${CommentsView} toast=${toast} data=${data} onChange=${loadData}/>`}
           </div>
         </div>
 
@@ -996,33 +990,28 @@
       </div>`;
   }
 
-  /* ── Login ── */
+  /* ── Вхід — панель відкривається акаунту, записаному у Firestore як адміністратор ── */
   function AdminPage() {
-    const [authed,  setAuthed]  = useState(() => { try { return sessionStorage.getItem('admin_auth') === '1'; } catch { return false; } });
-    const [err,     setErr]     = useState(false);
-    const [loading, setLoading] = useState(false);
-    const pwdRef = useRef();
+    const { user } = window.useApp();
+    const uid = user ? user.id : null;
+    // null — ще перевіряємо; true / false — відповідь бази
+    const [admin, setAdmin] = useState(null);
 
     useEffect(() => {
       document.body.classList.add('is-admin');
       return () => document.body.classList.remove('is-admin');
     }, []);
 
-    function login() {
-      setLoading(true);
-      setTimeout(() => {
-        if (pwdRef.current.value === ADMIN_PASSWORD) {
-          try { sessionStorage.setItem('admin_auth', '1'); } catch {}
-          setAuthed(true);
-        } else {
-          setErr(true); pwdRef.current.value = ''; setLoading(false);
-        }
-      }, 350);
-    }
+    useEffect(() => {
+      let alive = true;
+      setAdmin(null);
+      if (uid) Db.isAdmin().then(ok => { if (alive) setAdmin(ok); }, () => { if (alive) setAdmin(false); });
+      return () => { alive = false; };
+    }, [uid]);
 
-    function logout() { try { sessionStorage.removeItem('admin_auth'); } catch {} setAuthed(false); }
+    const logout = () => Auth.logout().catch(() => {});
 
-    if (authed) return html`<${AdminPanel} onLogout=${logout}/>`;
+    if (user && admin) return html`<${AdminPanel} onLogout=${logout}/>`;
 
     return html`
       <div class="adm-login">
@@ -1031,22 +1020,21 @@
           <div class="adm-login-cross">✝</div>
           <h2 class="adm-login-title">Адмін-панель</h2>
           <p class="adm-login-sub">Діти Божі · Обмежений доступ</p>
-          <div class="adm-field">
-            <label class="adm-label">Пароль</label>
-            <input class="adm-input" type="password" ref=${pwdRef}
-                   placeholder="Введіть пароль адміністратора"
-                   onKeyDown=${e => e.key === 'Enter' && login()}/>
-          </div>
-          ${err && html`
+          ${!user ? html`
+            <button class="adm-btn adm-btn-primary adm-btn--full" onClick=${() => window.openAuthModal()}>
+              Увійти →
+            </button>
+          ` : admin === null ? html`
+            <p class="adm-login-sub">Перевірка доступу…</p>
+          ` : html`
             <div class="adm-login-err">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style=${{ flexShrink: 0 }}>
                 <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
               </svg>
-              Невірний пароль. Спробуйте ще раз.
-            </div>`}
-          <button class="adm-btn adm-btn-primary adm-btn--full" onClick=${login} disabled=${loading}>
-            ${loading ? 'Перевірка…' : 'Увійти →'}
-          </button>
+              Акаунт ${user.email} не має доступу до панелі.
+            </div>
+            <button class="adm-btn adm-btn-ghost adm-btn--full" onClick=${logout}>Вийти й увійти іншим акаунтом</button>
+          `}
         </div>
       </div>`;
   }
