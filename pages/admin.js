@@ -6,7 +6,7 @@
   function getPosts()      { try { return JSON.parse(localStorage.getItem('ditibozhi_posts')    || '[]'); } catch { return []; } }
   function savePosts(p)    { localStorage.setItem('ditibozhi_posts', JSON.stringify(p)); }
   // Користувачі, коментарі й лайки приходять із Firestore (Db.adminData); це вигляд «ще не завантажено»
-  const NO_DATA = { users: [], comments: [], likes: {}, likesTotal: 0 };
+  const NO_DATA = { users: [], comments: [], likes: {}, likesTotal: 0, likeTimes: [], stats: {} };
 
   /* ── GitHub — спільне сховище постів ──
      Пости лежать у posts.json в репозиторії (медіа — у media/), тому їх бачать усі
@@ -125,37 +125,6 @@
     });
   }
 
-  /* ── Analytics (localStorage-based visit tracking) ── */
-  function getAnalytics() {
-    try { return JSON.parse(localStorage.getItem('ditibozhi_analytics') || '{}'); } catch { return {}; }
-  }
-  window.trackVisit = function(page) {
-    try {
-      const data = getAnalytics();
-      const key = new Date().toISOString().slice(0, 10);
-      if (!data[key]) data[key] = { feed: 0, about: 0, donate: 0, total: 0 };
-      data[key][page] = (data[key][page] || 0) + 1;
-      data[key].total = (data[key].total || 0) + 1;
-      localStorage.setItem('ditibozhi_analytics', JSON.stringify(data));
-    } catch {}
-  };
-
-  function ensureAnalytics() {
-    const data = getAnalytics();
-    if (Object.keys(data).length >= 14) return data;
-    const now = new Date();
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date(now); d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
-      if (!data[key]) {
-        const base = 8 + Math.floor(Math.random() * 22) + (i < 7 ? 5 : 0);
-        data[key] = { feed: base, about: Math.floor(base * 0.55), donate: Math.floor(base * 0.18), total: base + Math.floor(Math.random() * 12) };
-      }
-    }
-    localStorage.setItem('ditibozhi_analytics', JSON.stringify(data));
-    return getAnalytics();
-  }
-
   /* ── SVG Bar Chart ── */
   function BarChart({ data, height = 130 }) {
     if (!data || !data.length) return null;
@@ -177,7 +146,9 @@
             return html`
               <g key=${i}>
                 <rect x=${x} y=${y} width="20" height=${bH} rx="3"
-                      fill="url(#barG)" opacity=${d.fresh ? 1 : 0.5}/>
+                      fill="url(#barG)" opacity=${d.fresh ? 1 : 0.5}>
+                  <title>${d.title}</title>
+                </rect>
                 ${d.label && html`
                   <text x=${x + 10} y=${height - 2}
                         text-anchor="middle" font-size="7.5" fill="#484f58">${d.label}</text>`}
@@ -500,48 +471,47 @@
 
   /* ── Dashboard ── */
   function Dashboard({ posts, data, onTab }) {
-    const users     = data.users;
-    const analytics = ensureAnalytics();
+    const users = data.users;
 
-    const totalComments = data.comments.length;
-    const totalLikes    = data.likesTotal;
+    // останні 30 днів, від найдавнішого до сьогодні; ключ дня — той самий, що в лічильниках (UTC)
+    const dayKey = ms => new Date(ms).toISOString().slice(0, 10);
+    const days   = [];
+    for (let i = 29; i >= 0; i--) days.push(dayKey(Date.now() - i * 864e5));
+    const stat   = (day, field) => (data.stats[day] && data.stats[day][field]) || 0;
+    const sum    = (list, field) => list.reduce((n, day) => n + stat(day, field), 0);
+    // скільки подій (реєстрацій, коментарів, лайків) припало на кожен із останніх 14 днів
+    const perDay = times => days.slice(-14).map(day => times.filter(t => t && dayKey(t) === day).length);
 
-    const now = new Date();
-    const last30 = [], spark14 = [];
-    let totalVisits = 0, weekVisits = 0;
-
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date(now); d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
-      const val = analytics[key]?.total || 0;
-      totalVisits += val; if (i < 7) weekVisits += val;
-      last30.push({ value: val, label: (i % 7 === 0 || i === 0) ? key.slice(5) : '', fresh: i < 4 });
-      if (i < 14) spark14.push(val);
-    }
+    const monthViews   = sum(days, 'views');
+    const weekVisitors = sum(days.slice(-7), 'visitors');
+    const last30 = days.map((day, i) => ({
+      value: stat(day, 'views'),
+      title: day + ': ' + stat(day, 'views') + ' переглядів, ' + stat(day, 'visitors') + ' відвідувачів',
+      label: ((29 - i) % 7 === 0) ? day.slice(5) : '',
+      fresh: i >= 26,
+    }));
 
     const recentPosts = posts.slice(0, 4);
     const recentUsers = [...users].sort((a, b) => (b.joinedAt || 0) - (a.joinedAt || 0)).slice(0, 4);
 
-    const pages = ['feed', 'about', 'donate'];
-    const pageLabels = { feed: 'Стрічка новин', about: 'Про нас', donate: 'Донат' };
-    const pageColors = { feed: '#58a6ff', about: '#3fb950', donate: '#d4a017' };
-    const pageTotals = pages.map(pg => ({
-      page: pg, total: Object.values(analytics).reduce((n, d) => n + (d[pg] || 0), 0)
-    }));
+    const pages = ['feed', 'about', 'gallery', 'videos', 'donate'];
+    const pageLabels = { feed: 'Стрічка новин', about: 'Про нас', gallery: 'Галерея', videos: 'Відео', donate: 'Донат' };
+    const pageColors = { feed: '#58a6ff', about: '#3fb950', gallery: '#bc8cff', videos: '#f85149', donate: '#d4a017' };
+    const pageTotals = pages.map(pg => ({ page: pg, total: sum(days, pg) }));
     const pageSum = Math.max(pageTotals.reduce((n, p) => n + p.total, 0), 1);
 
     const STATS = [
-      { v: posts.length,   label: 'Всього постів',     color: '#58a6ff', spark: spark14.map((_, i) => posts.filter(p => p.id < Date.now()).length),
+      { v: posts.length,   label: 'Всього постів',     color: '#58a6ff', spark: perDay(posts.map(p => p.id)),
         icon: html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/></svg>` },
-      { v: users.length,   label: 'Користувачів',      color: '#3fb950', spark: spark14,
+      { v: users.length,   label: 'Користувачів',      color: '#3fb950', spark: perDay(users.map(u => u.joinedAt)),
         icon: html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>` },
-      { v: totalComments,  label: 'Коментарів',         color: '#d4a017', spark: spark14.map(v => Math.floor(v * 0.3)),
+      { v: data.comments.length, label: 'Коментарів',   color: '#d4a017', spark: perDay(data.comments.map(c => c.createdAt)),
         icon: html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>` },
-      { v: totalLikes,     label: 'Всього лайків',      color: '#f85149', spark: spark14.map(v => Math.floor(v * 0.15)),
+      { v: data.likesTotal, label: 'Всього лайків',     color: '#f85149', spark: perDay(data.likeTimes),
         icon: html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>` },
-      { v: weekVisits,     label: 'За тиждень',         color: '#bc8cff', spark: last30.slice(-14).map(d => d.value),
+      { v: weekVisitors,   label: 'Відвідувачів за тиждень', color: '#bc8cff', spark: days.slice(-14).map(day => stat(day, 'visitors')),
         icon: html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>` },
-      { v: totalVisits,    label: 'Всього відвідувань', color: '#39d353', spark: last30.slice(-14).map(d => d.value),
+      { v: monthViews,     label: 'Переглядів за 30 днів', color: '#39d353', spark: last30.slice(-14).map(d => d.value),
         icon: html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>` },
     ];
 
@@ -564,10 +534,10 @@
           <div class="adm-card adm-card--grow">
             <div class="adm-card-header">
               <div class="adm-card-title-row">
-                <span class="adm-card-title">Активність сайту</span>
+                <span class="adm-card-title">Перегляди сторінок</span>
                 <span class="adm-badge-gold">Останні 30 днів</span>
               </div>
-              <span style=${{ color: '#e6edf3', fontWeight: 700, fontSize: '1.1rem' }}>${totalVisits.toLocaleString()}</span>
+              <span style=${{ color: '#e6edf3', fontWeight: 700, fontSize: '1.1rem' }}>${monthViews.toLocaleString()}</span>
             </div>
             <${BarChart} data=${last30} height=${130}/>
           </div>
@@ -588,7 +558,7 @@
                     <div class="adm-breakdown-track">
                       <div class="adm-breakdown-fill" style=${{ width: pct + '%', background: pageColors[page] }}></div>
                     </div>
-                    <div class="adm-breakdown-count">${total.toLocaleString()} відвідувань</div>
+                    <div class="adm-breakdown-count">${total.toLocaleString()} переглядів</div>
                   </div>`;
               })}
             </div>
@@ -802,6 +772,9 @@
     const [formKey,    setFormKey]    = useState(0);
     const [connected,  setConnected]  = useState(() => !!getToken());
     const [data,       setData]       = useState(NO_DATA);
+
+    // власні візити адміністратора в статистику не йдуть
+    useEffect(() => { try { localStorage.setItem('ditibozhi_no_track', '1'); } catch {} }, []);
 
     function refresh() {
       setPosts(getPosts());
