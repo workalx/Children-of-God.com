@@ -7,6 +7,11 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function signedIn() { return request.auth != null; }
+    // вхід через Google чи GitHub уже підтверджує особу; пошту перевіряємо лише для пароля
+    function verified() {
+      return signedIn() && (request.auth.token.email_verified == true
+        || request.auth.token.firebase.sign_in_provider != 'password');
+    }
     function isAdmin()  { return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
 
     // Картка користувача: пише лише власник, читає власник і адміністратор
@@ -15,7 +20,7 @@ service cloud.firestore {
       allow create, update: if signedIn() && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['username', 'email', 'provider', 'joinedAt', 'lastLoginAt'])
         && request.resource.data.username is string && request.resource.data.username.size() <= 40
-        && request.resource.data.email == request.auth.token.email;
+        && request.resource.data.email == request.auth.token.get('email', '');
       allow delete: if isAdmin();
     }
 
@@ -23,6 +28,31 @@ service cloud.firestore {
     match /admins/{uid} {
       allow read: if signedIn() && request.auth.uid == uid;
       allow write: if false;
+    }
+
+    // Коментарі читають усі; пише той, хто підтвердив пошту; видаляє автор або адміністратор
+    match /comments/{id} {
+      allow read: if true;
+      allow create: if verified()
+        && request.resource.data.keys().hasOnly(['postId', 'uid', 'username', 'text', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.postId is string && request.resource.data.postId.size() <= 40
+        && request.resource.data.username is string && request.resource.data.username.size() <= 40
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 1000
+        && request.resource.data.createdAt == request.time;
+      allow delete: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+    }
+
+    // Лайк — документ із назвою «пост_користувач», тому на один пост від людини він один
+    match /likes/{id} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['postId', 'uid'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.postId is string && request.resource.data.postId.size() <= 40
+        && id == request.resource.data.postId + '_' + request.auth.uid;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
   }
 }

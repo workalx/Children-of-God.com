@@ -6,7 +6,7 @@ A multi-page website for **"Children of God"** ("Діти Божі"), a Ukrainia
 
 - **Hash-based routing** (`#feed`, `#about`, `#donate`, `#admin`) with pages loaded on demand — no bundler, no build step
 - **Trilingual UI** — Ukrainian / English / Russian, switchable from the nav, with English as the default
-- **News feed** — Instagram-style post feed with likes and comments. Posts live in `posts.json` (media in `media/`) in this repository, so every visitor sees the same feed. A post can carry any number of photos/videos: the feed card shows the 1–4 the admin picked, and "View all" opens the post's own page (`#post/<id>`) with the full grid and a lightbox
+- **News feed** — Instagram-style post feed with likes and comments, both stored in Firestore so every visitor sees the same ones. Posts live in `posts.json` (media in `media/`) in this repository, so every visitor sees the same feed. A post can carry any number of photos/videos: the feed card shows the 1–4 the admin picked, and "View all" opens the post's own page (`#post/<id>`) with the full grid and a lightbox
 - **User accounts** — Firebase Authentication: email and password with email confirmation, or Google / GitHub sign-in. Access rules for the Firestore database are kept in `firestore.rules`
 - **About page** — group bio, photo gallery, embedded videos, and contact info, all lazy-rendered via `IntersectionObserver` as you scroll
 - **Gallery and videos pages** — the gallery (`#gallery`) shows every photo published in a post followed by the archive in `img/`; the videos page (`#videos`) shows the pinned videos plus every YouTube link added to a post
@@ -27,7 +27,9 @@ A multi-page website for **"Children of God"** ("Діти Божі"), a Ukrainia
 ```
 index.html        Single HTML shell — loads React (CDN) + app.js
 app.js             React app: router, Nav, Footer, auth modal, i18n (uk/en/ru)
-auth.js            Client-side registration, login, comments
+auth.js            Sign-in and registration (Firebase Authentication)
+db.js              Comments and likes (Firestore)
+firestore.rules    Copy of the Firestore access rules published in the Firebase console
 shared.css         All project styles
 pages/
   feed.js          News feed (loaded on #feed)

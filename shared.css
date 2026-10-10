@@ -249,6 +249,9 @@ video.lightbox-img, iframe.lightbox-img { background: #000; border: none; }
   border: none; border-radius: 50px; padding: .45rem 1.1rem;
   font-size: .85rem; font-weight: 700; cursor: pointer; font-family: inherit;
 }
+.comment-error { font-size: .82rem; color: #c0393b; margin-bottom: .6rem; }
+.comment-send:disabled { opacity: .55; cursor: default; }
+.comment-text { overflow-wrap: anywhere; }
 .comment-login-prompt { font-size: .85rem; color: var(--text-muted); text-align: center; padding: .4rem 0; }
 .comment-login-prompt a { color: var(--gold); font-weight: 700; cursor: pointer; }
 .comment-login-prompt a:hover { text-decoration: underline; }

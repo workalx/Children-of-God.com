@@ -4,12 +4,6 @@
   const html = window.html;
   const Ctx  = window.useApp;
 
-  function escHtml(str) {
-    return String(str)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
   /* ── helpers ── */
   function getPostText(p, lang) {
     if (lang === 'uk') return p.textUk || p.text || '';
@@ -19,50 +13,68 @@
   }
 
   /* ── Comment item ── */
-  function CommentItem({ c, postId, currentUser, onDelete }) {
+  function CommentItem({ c, lang, currentUser, onDelete }) {
+    const date = new Date(c.createdAt).toLocaleDateString({ uk: 'uk-UA', ru: 'ru-RU' }[lang] || 'en-GB');
     return html`
       <div class="comment-item">
         <div class="comment-avatar">${c.username.charAt(0).toUpperCase()}</div>
         <div class="comment-body">
-          <div class="comment-username">${escHtml(c.username)}</div>
-          <div class="comment-text">${escHtml(c.text)}</div>
-          <div class="comment-date">${c.date}</div>
+          <div class="comment-username">${c.username}</div>
+          <div class="comment-text">${c.text}</div>
+          <div class="comment-date">${date}</div>
         </div>
-        ${currentUser && currentUser.id === c.userId && html`
-          <button class="comment-del" onClick=${() => onDelete(postId, c.id)}>✕</button>`}
+        ${currentUser && currentUser.id === c.uid && html`
+          <button class="comment-del" onClick=${() => onDelete(c.id)}>✕</button>`}
       </div>`;
   }
 
   /* ── Comments section ── */
   function Comments({ postId, lang, t, user }) {
-    const [list,  setList]  = useState(() => commentsGet(postId));
+    const [list,  setList]  = useState([]);
     const [draft, setDraft] = useState('');
+    const [busy,  setBusy]  = useState(false);
+    const [failed, setFailed] = useState(false);
 
-    function send() {
-      if (!draft.trim()) return;
-      commentsAdd(postId, draft.trim());
-      setList(commentsGet(postId));
-      setDraft('');
+    useEffect(() => {
+      let alive = true;
+      Db.comments(postId).then(l => { if (alive) setList(l); }, () => {});
+      return () => { alive = false; };
+    }, [postId]);
+
+    async function send() {
+      const text = draft.trim();
+      if (!text || busy) return;
+      setBusy(true);
+      try {
+        const c = await Db.addComment(postId, text);
+        setList(l => [...l, c]);
+        setDraft(''); setFailed(false);
+      } catch (e) { setFailed(true); }
+      setBusy(false);
     }
-    function del(pid, cid) {
-      commentsDelete(pid, cid);
-      setList(commentsGet(postId));
+    async function del(id) {
+      try {
+        await Db.deleteComment(id);
+        setList(l => l.filter(c => c.id !== id));
+        setFailed(false);
+      } catch (e) { setFailed(true); }
     }
 
     return html`
       <div class="comments-section">
         <div class="comments-list">
           ${list.map(c => html`
-            <${CommentItem} key=${c.id} c=${c} postId=${postId} currentUser=${user} onDelete=${del}/>`)}
+            <${CommentItem} key=${c.id} c=${c} lang=${lang} currentUser=${user} onDelete=${del}/>`)}
         </div>
+        ${failed && html`<div class="comment-error">${t.comment_error}</div>`}
         ${user && user.verified
           ? html`
             <div class="comment-input-row">
-              <input class="comment-input" value=${draft}
+              <input class="comment-input" value=${draft} maxlength="1000"
                      placeholder=${t.comment_placeholder}
                      onChange=${e => setDraft(e.target.value)}
                      onKeyDown=${e => e.key==='Enter' && send()}/>
-              <button class="comment-send" onClick=${send}>➤</button>
+              <button class="comment-send" onClick=${send} disabled=${busy}>➤</button>
             </div>`
           : html`
             <div class="comment-login-prompt"
@@ -140,9 +152,17 @@
   function PostCard({ p, idx, lang, t, user, navLogo, full }) {
     const { navigate } = Ctx();
     const [liked, setLiked] = useState(false);
-    const [likes, setLikes] = useState(p.likes || 0);
+    const [likes, setLikes] = useState(0);
     const [open,  setOpen]  = useState(null);   // індекс медіа в лайтбоксі
     const postId = String(p.id || idx);
+    const uid    = user ? user.id : null;
+
+    // лічильник спільний для всіх; після входу чи виходу перечитуємо, чи є тут мій лайк
+    useEffect(() => {
+      let alive = true;
+      Db.likes(postId).then(r => { if (alive) { setLikes(r.count); setLiked(r.mine); } }, () => {});
+      return () => { alive = false; };
+    }, [postId, uid]);
     const text   = getPostText(p, lang);
     const all    = window.postMedia(p);
     const shown  = full ? all : window.postPreview(p);
@@ -153,9 +173,12 @@
     }
 
     function toggleLike() {
+      if (!user) { window.openAuthModal(); return; }
       const next = !liked;
-      setLiked(next);
-      setLikes(l => next ? l + 1 : Math.max(0, l - 1));
+      const show = on => { setLiked(on); setLikes(l => Math.max(0, l + (on ? 1 : -1))); };
+      show(next);
+      // показуємо одразу; якщо зберегти не вдалося — повертаємо як було
+      Db.setLike(postId, next).catch(() => show(!next));
     }
 
     const media = all.length === 0 ? null
