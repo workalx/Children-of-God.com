@@ -37,6 +37,7 @@ window.html = htm.bind(React.createElement);
       auth_err_unknown: 'Щось пішло не так. Спробуйте ще раз.',
       comment_verify: 'Щоб коментувати — <a>підтвердіть пошту</a>',
       comment_error: 'Не вдалося зберегти. Спробуйте ще раз.',
+      comment_blocked: 'Адміністратор обмежив ваш акаунт: коментарі та лайки недоступні.',
       footer: '© 2026 <strong>Діти Божі</strong> — Музична група. Слава Богу за кожну пісню. ✝',
       feed_tag: 'Стрічка', feed_title: 'Актуальні <span>Новини</span>',
       feed_empty: "Поки що публікацій немає. Незабаром щось з'явиться! 🙏",
@@ -94,6 +95,7 @@ window.html = htm.bind(React.createElement);
       auth_err_unknown: 'Something went wrong. Please try again.',
       comment_verify: 'To comment — <a>confirm your email</a>',
       comment_error: 'Could not save. Please try again.',
+      comment_blocked: 'An administrator has restricted your account: comments and likes are unavailable.',
       footer: '© 2026 <strong>Children of God</strong> — Music Group. Glory to God for every song. ✝',
       feed_tag: 'Feed', feed_title: 'Latest <span>News</span>',
       feed_empty: 'No posts yet. Something is coming soon! 🙏',
@@ -151,6 +153,7 @@ window.html = htm.bind(React.createElement);
       auth_err_unknown: 'Что-то пошло не так. Попробуйте ещё раз.',
       comment_verify: 'Чтобы комментировать — <a>подтвердите почту</a>',
       comment_error: 'Не удалось сохранить. Попробуйте ещё раз.',
+      comment_blocked: 'Администратор ограничил ваш аккаунт: комментарии и лайки недоступны.',
       footer: '© 2026 <strong>Дети Божьи</strong> — Музыкальная группа. Слава Богу за каждую песню. ✝',
       feed_tag: 'Лента', feed_title: 'Актуальные <span>Новости</span>',
       feed_empty: 'Публикаций пока нет. Скоро что-то появится! 🙏',
@@ -522,6 +525,7 @@ window.html = htm.bind(React.createElement);
     const [page, setPage] = useState(() => location.hash.replace('#', '') || HOME_PAGE);
     const [user, setUser] = useState(Auth.user);
     const [showAuth, setShowAuth] = useState(false);
+    const [blocked,  setBlocked]  = useState(false);
 
     const t = I18N[lang] || I18N.en;
     // '#post/123' → сторінка 'post' з параметром '123'
@@ -563,10 +567,18 @@ window.html = htm.bind(React.createElement);
 
     useEffect(() => { Db.track(name); }, [name]);
 
+    // заблокованому одразу пояснюємо, чому немає поля коментаря, а не чекаємо відмови бази
+    useEffect(() => {
+      let alive = true;
+      setBlocked(false);
+      if (user) Db.amBlocked().then(b => { if (alive) setBlocked(b); }, () => {});
+      return () => { alive = false; };
+    }, [user && user.id]);
+
     // expose openAuthModal globally (used in page components)
     useEffect(() => { window.openAuthModal = () => setShowAuth(true); }, []);
 
-    const ctx = { lang, t, applyLang, user, showAuth, setShowAuth, navigate };
+    const ctx = { lang, t, applyLang, user, blocked, showAuth, setShowAuth, navigate };
 
     return html`
       <${Ctx.Provider} value=${ctx}>
