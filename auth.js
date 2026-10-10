@@ -123,10 +123,14 @@ const Auth = (function () {
         try {
           const { user } = await mod.createUserWithEmailAndPassword(auth, String(email).trim(), password);
           await mod.updateProfile(user, { displayName: username });
-          await mod.sendEmailVerification(user);
-        } finally { registering = false; }
-        emit(auth.currentUser);
+        } finally {
+          registering = false;
+          // акаунт уже створено, навіть якщо далі щось зірвалось — сайт має показати, що людина увійшла
+          if (auth.currentUser) emit(auth.currentUser);
+        }
         saveProfile(app, auth.currentUser);
+        // якщо лист не пішов, вікно підтвердження покаже помилку й кнопку «Надіслати ще раз»
+        await mod.sendEmailVerification(auth.currentUser);
         return current;
       });
     },
