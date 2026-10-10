@@ -27,7 +27,9 @@ A multi-page website for **"Children of God"** ("Діти Божі"), a Ukrainia
 ```
 index.html        Single HTML shell — loads React (CDN) + app.js
 app.js             React app: router, Nav, Footer, auth modal, i18n (uk/en/ru)
-auth.js            Client-side registration, login, comments
+auth.js            Sign-in and registration (Firebase Authentication)
+db.js              Comments and likes (Firestore)
+firestore.rules    Copy of the Firestore access rules published in the Firebase console
 shared.css         All project styles
 pages/
   feed.js          News feed (loaded on #feed)
