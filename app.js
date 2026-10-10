@@ -22,6 +22,20 @@ window.html = htm.bind(React.createElement);
       login_btn: 'Увійти', logout_btn: 'Вийти', greeting: 'Привіт,',
       auth_tab_login: 'Увійти', auth_tab_register: 'Реєстрація',
       auth_name: "Ім'я", auth_email: 'Email', auth_password: 'Пароль',
+      auth_or: 'або', auth_forgot: 'Забули пароль?',
+      auth_reset_sent: 'Якщо такий акаунт існує, ми надіслали лист для відновлення пароля.',
+      auth_verify_title: 'Підтвердіть пошту',
+      auth_verify_text: 'Ми надіслали лист на {email}. Відкрийте його й натисніть посилання, а потім поверніться сюди.',
+      auth_verify_done: 'Я підтвердив', auth_verify_resend: 'Надіслати лист ще раз', auth_verify_resent: 'Лист надіслано ще раз.',
+      auth_err_bad_login: 'Невірний email або пароль', auth_err_email_taken: 'Цей email вже зареєстровано',
+      auth_err_bad_email: 'Невірний email', auth_err_weak_password: 'Пароль — щонайменше 6 символів',
+      auth_err_bad_name: "Ім'я — від 2 до 40 символів", auth_err_too_many: 'Забагато спроб. Спробуйте за кілька хвилин.',
+      auth_err_network: "Немає зв'язку. Перевірте інтернет і спробуйте ще раз.",
+      auth_err_popup_blocked: 'Браузер заблокував вікно входу. Дозвольте спливні вікна для цього сайту.',
+      auth_err_other_provider: 'Цей email уже використано з іншим способом входу. Увійдіть тим способом.',
+      auth_err_not_enabled: 'Цей спосіб входу зараз недоступний.', auth_err_not_verified: 'Пошту ще не підтверджено. Перевірте лист, зокрема папку «Спам».',
+      auth_err_unknown: 'Щось пішло не так. Спробуйте ще раз.',
+      comment_verify: 'Щоб коментувати — <a>підтвердіть пошту</a>',
       footer: '© 2026 <strong>Діти Божі</strong> — Музична група. Слава Богу за кожну пісню. ✝',
       feed_tag: 'Стрічка', feed_title: 'Актуальні <span>Новини</span>',
       feed_empty: "Поки що публікацій немає. Незабаром щось з'явиться! 🙏",
@@ -64,6 +78,20 @@ window.html = htm.bind(React.createElement);
       login_btn: 'Log in', logout_btn: 'Log out', greeting: 'Hi,',
       auth_tab_login: 'Log in', auth_tab_register: 'Register',
       auth_name: 'Name', auth_email: 'Email', auth_password: 'Password',
+      auth_or: 'or', auth_forgot: 'Forgot password?',
+      auth_reset_sent: 'If that account exists, we have sent a password reset email.',
+      auth_verify_title: 'Confirm your email',
+      auth_verify_text: 'We sent an email to {email}. Open it and click the link, then come back here.',
+      auth_verify_done: "I've confirmed", auth_verify_resend: 'Send the email again', auth_verify_resent: 'Email sent again.',
+      auth_err_bad_login: 'Invalid email or password', auth_err_email_taken: 'This email is already registered',
+      auth_err_bad_email: 'Invalid email', auth_err_weak_password: 'Password must be at least 6 characters',
+      auth_err_bad_name: 'Name must be 2 to 40 characters', auth_err_too_many: 'Too many attempts. Try again in a few minutes.',
+      auth_err_network: 'No connection. Check your internet and try again.',
+      auth_err_popup_blocked: 'Your browser blocked the sign-in window. Allow pop-ups for this site.',
+      auth_err_other_provider: 'This email is already used with another sign-in method. Sign in that way.',
+      auth_err_not_enabled: 'This sign-in method is unavailable right now.', auth_err_not_verified: 'Email not confirmed yet. Check the message, including your spam folder.',
+      auth_err_unknown: 'Something went wrong. Please try again.',
+      comment_verify: 'To comment — <a>confirm your email</a>',
       footer: '© 2026 <strong>Children of God</strong> — Music Group. Glory to God for every song. ✝',
       feed_tag: 'Feed', feed_title: 'Latest <span>News</span>',
       feed_empty: 'No posts yet. Something is coming soon! 🙏',
@@ -106,6 +134,20 @@ window.html = htm.bind(React.createElement);
       login_btn: 'Войти', logout_btn: 'Выйти', greeting: 'Привет,',
       auth_tab_login: 'Войти', auth_tab_register: 'Регистрация',
       auth_name: 'Имя', auth_email: 'Email', auth_password: 'Пароль',
+      auth_or: 'или', auth_forgot: 'Забыли пароль?',
+      auth_reset_sent: 'Если такой аккаунт существует, мы отправили письмо для восстановления пароля.',
+      auth_verify_title: 'Подтвердите почту',
+      auth_verify_text: 'Мы отправили письмо на {email}. Откройте его и нажмите ссылку, а затем вернитесь сюда.',
+      auth_verify_done: 'Я подтвердил', auth_verify_resend: 'Отправить письмо ещё раз', auth_verify_resent: 'Письмо отправлено ещё раз.',
+      auth_err_bad_login: 'Неверный email или пароль', auth_err_email_taken: 'Этот email уже зарегистрирован',
+      auth_err_bad_email: 'Неверный email', auth_err_weak_password: 'Пароль — не менее 6 символов',
+      auth_err_bad_name: 'Имя — от 2 до 40 символов', auth_err_too_many: 'Слишком много попыток. Попробуйте через несколько минут.',
+      auth_err_network: 'Нет связи. Проверьте интернет и попробуйте ещё раз.',
+      auth_err_popup_blocked: 'Браузер заблокировал окно входа. Разрешите всплывающие окна для этого сайта.',
+      auth_err_other_provider: 'Этот email уже используется с другим способом входа. Войдите тем способом.',
+      auth_err_not_enabled: 'Этот способ входа сейчас недоступен.', auth_err_not_verified: 'Почта ещё не подтверждена. Проверьте письмо, в том числе папку «Спам».',
+      auth_err_unknown: 'Что-то пошло не так. Попробуйте ещё раз.',
+      comment_verify: 'Чтобы комментировать — <a>подтвердите почту</a>',
       footer: '© 2026 <strong>Дети Божьи</strong> — Музыкальная группа. Слава Богу за каждую песню. ✝',
       feed_tag: 'Лента', feed_title: 'Актуальные <span>Новости</span>',
       feed_empty: 'Публикаций пока нет. Скоро что-то появится! 🙏',
@@ -196,12 +238,9 @@ window.html = htm.bind(React.createElement);
      Nav
   ───────────────────────────── */
   const Nav = memo(function Nav({ page, navigate }) {
-    const { lang, t, applyLang, user, setUser, setShowAuth } = useContext(Ctx);
+    const { lang, t, applyLang, user, setShowAuth } = useContext(Ctx);
 
-    function doLogout() {
-      if (typeof authLogout === 'function') authLogout();
-      setUser(null);
-    }
+    function doLogout() { Auth.logout().catch(() => {}); }
 
     return html`
       <nav>
@@ -251,24 +290,38 @@ window.html = htm.bind(React.createElement);
      Auth Modal
   ───────────────────────────── */
   function AuthModal() {
-    const { t, setShowAuth, setUser } = useContext(Ctx);
+    const { t, user, setShowAuth } = useContext(Ctx);
     const [tab, setTab]   = useState('login');
     const [err, setErr]   = useState('');
+    const [note, setNote] = useState('');
+    const [busy, setBusy] = useState(false);
     const loginEmail = useRef(); const loginPass = useRef();
     const regName = useRef(); const regEmail = useRef(); const regPass = useRef();
 
-    function close() { setShowAuth(false); setErr(''); }
+    // увійшов із паролем, але ще не натиснув посилання з листа
+    const verifying = user && !user.verified;
 
-    function doLogin() {
-      const res = authLogin(loginEmail.current.value, loginPass.current.value);
-      if (res.ok) { setUser(res.user); close(); }
-      else setErr(res.msg.en || res.msg.uk);
+    function close() { setShowAuth(false); }
+    function switchTab(next) { setTab(next); setErr(''); setNote(''); }
+
+    // Усі дії йдуть однаково: кнопки блокуються, помилка показується мовою сайту
+    async function run(fn) {
+      if (busy) return;
+      setBusy(true); setErr(''); setNote('');
+      try { await fn(); }
+      catch (e) { if (e.message !== 'cancelled') setErr(t['auth_err_' + e.message] || t.auth_err_unknown); }
+      setBusy(false);
     }
-    function doRegister() {
-      const res = authRegister(regName.current.value, regEmail.current.value, regPass.current.value);
-      if (res.ok) { setUser(res.user); close(); }
-      else setErr(res.msg.en || res.msg.uk);
-    }
+
+    const doLogin    = () => run(async () => { if ((await Auth.login(loginEmail.current.value, loginPass.current.value)).verified) close(); });
+    const doRegister = () => run(() => Auth.register(regName.current.value, regEmail.current.value, regPass.current.value));
+    const doProvider = name => run(async () => { await Auth.loginWith(name); close(); });
+    const doReset    = () => run(async () => { await Auth.resetPassword(loginEmail.current.value); setNote(t.auth_reset_sent); });
+    const doResend   = () => run(async () => { await Auth.resendVerification(); setNote(t.auth_verify_resent); });
+    const doCheck    = () => run(async () => {
+      const u = await Auth.refresh();
+      if (u && u.verified) close(); else setErr(t.auth_err_not_verified);
+    });
 
     // close on backdrop click
     function onBackdrop(e) { if (e.target === e.currentTarget) close(); }
@@ -279,48 +332,82 @@ window.html = htm.bind(React.createElement);
       return () => document.removeEventListener('keydown', fn);
     }, []);
 
+    const providers = html`
+      <div class="auth-or">${t.auth_or}</div>
+      <div class="auth-providers">
+        <button class="auth-provider" onClick=${() => doProvider('google')} disabled=${busy}>
+          <svg viewBox="0 0 24 24" width="18" height="18">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"/>
+          </svg>
+          Google
+        </button>
+        <button class="auth-provider" onClick=${() => doProvider('github')} disabled=${busy}>
+          <svg viewBox="0 0 24 24" width="18" height="18">
+            <path fill="#181717" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.7 5.4-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/>
+          </svg>
+          GitHub
+        </button>
+      </div>`;
+
     return html`
       <div class="auth-overlay" onClick=${onBackdrop}>
         <div class="auth-box">
           <button class="auth-close" onClick=${close}>✕</button>
-          <div class="auth-tabs">
-            <button class=${'auth-tab' + (tab==='login' ? ' active':'')} onClick=${()=>{setTab('login');setErr('');}}>
-              ${t.auth_tab_login}
-            </button>
-            <button class=${'auth-tab' + (tab==='register' ? ' active':'')} onClick=${()=>{setTab('register');setErr('');}}>
-              ${t.auth_tab_register}
-            </button>
-          </div>
-          <div class="auth-body">
-            ${err && html`<div class="auth-error">${err}</div>`}
-            ${tab === 'login' ? html`
-              <div class="auth-field">
-                <label>${t.auth_email}</label>
-                <input type="email" ref=${loginEmail} autocomplete="email"/>
-              </div>
-              <div class="auth-field">
-                <label>${t.auth_password}</label>
-                <input type="password" ref=${loginPass} autocomplete="current-password"
-                       onKeyDown=${e => e.key==='Enter' && doLogin()}/>
-              </div>
-              <button class="auth-submit" onClick=${doLogin}>${t.auth_tab_login}</button>
-            ` : html`
-              <div class="auth-field">
-                <label>${t.auth_name}</label>
-                <input type="text" ref=${regName} autocomplete="username"/>
-              </div>
-              <div class="auth-field">
-                <label>${t.auth_email}</label>
-                <input type="email" ref=${regEmail} autocomplete="email"/>
-              </div>
-              <div class="auth-field">
-                <label>${t.auth_password}</label>
-                <input type="password" ref=${regPass} autocomplete="new-password"
-                       onKeyDown=${e => e.key==='Enter' && doRegister()}/>
-              </div>
-              <button class="auth-submit" onClick=${doRegister}>${t.auth_tab_register}</button>
-            `}
-          </div>
+          ${verifying ? html`
+            <div class="auth-body">
+              <h3 class="auth-heading">${t.auth_verify_title}</h3>
+              <p class="auth-text">${t.auth_verify_text.replace('{email}', user.email)}</p>
+              ${err && html`<div class="auth-error">${err}</div>`}
+              ${note && html`<div class="auth-note">${note}</div>`}
+              <button class="auth-submit" onClick=${doCheck} disabled=${busy}>${t.auth_verify_done}</button>
+              <button class="auth-link" onClick=${doResend} disabled=${busy}>${t.auth_verify_resend}</button>
+            </div>
+          ` : html`
+            <div class="auth-tabs">
+              <button class=${'auth-tab' + (tab==='login' ? ' active':'')} onClick=${() => switchTab('login')}>
+                ${t.auth_tab_login}
+              </button>
+              <button class=${'auth-tab' + (tab==='register' ? ' active':'')} onClick=${() => switchTab('register')}>
+                ${t.auth_tab_register}
+              </button>
+            </div>
+            <div class="auth-body">
+              ${err && html`<div class="auth-error">${err}</div>`}
+              ${note && html`<div class="auth-note">${note}</div>`}
+              ${tab === 'login' ? html`
+                <div class="auth-field">
+                  <label>${t.auth_email}</label>
+                  <input type="email" ref=${loginEmail} autocomplete="email"/>
+                </div>
+                <div class="auth-field">
+                  <label>${t.auth_password}</label>
+                  <input type="password" ref=${loginPass} autocomplete="current-password"
+                         onKeyDown=${e => e.key==='Enter' && doLogin()}/>
+                </div>
+                <button class="auth-submit" onClick=${doLogin} disabled=${busy}>${t.auth_tab_login}</button>
+                <button class="auth-link" onClick=${doReset} disabled=${busy}>${t.auth_forgot}</button>
+              ` : html`
+                <div class="auth-field">
+                  <label>${t.auth_name}</label>
+                  <input type="text" ref=${regName} autocomplete="username" maxlength="40"/>
+                </div>
+                <div class="auth-field">
+                  <label>${t.auth_email}</label>
+                  <input type="email" ref=${regEmail} autocomplete="email"/>
+                </div>
+                <div class="auth-field">
+                  <label>${t.auth_password}</label>
+                  <input type="password" ref=${regPass} autocomplete="new-password"
+                         onKeyDown=${e => e.key==='Enter' && doRegister()}/>
+                </div>
+                <button class="auth-submit" onClick=${doRegister} disabled=${busy}>${t.auth_tab_register}</button>
+              `}
+              ${providers}
+            </div>
+          `}
         </div>
       </div>`;
   }
@@ -430,7 +517,7 @@ window.html = htm.bind(React.createElement);
       try { return localStorage.getItem('ditibozhi_lang') || 'en'; } catch { return 'en'; }
     });
     const [page, setPage] = useState(() => location.hash.replace('#', '') || HOME_PAGE);
-    const [user, setUser] = useState(() => typeof authGetCurrentUser === 'function' ? authGetCurrentUser() : null);
+    const [user, setUser] = useState(Auth.user);
     const [showAuth, setShowAuth] = useState(false);
 
     const t = I18N[lang] || I18N.en;
@@ -459,10 +546,22 @@ window.html = htm.bind(React.createElement);
       return () => window.removeEventListener('hashchange', fn);
     }, []);
 
+    // акаунт живе у Firebase: стежимо за входом і виходом, зокрема в інших вкладках
+    useEffect(() => Auth.onChange(setUser), []);
+    useEffect(() => { Auth.setLang(lang); }, [lang]);
+
+    // людина підтвердила пошту в іншій вкладці й повернулась — перечитуємо акаунт
+    useEffect(() => {
+      if (!user || user.verified) return;
+      const fn = () => { if (!document.hidden) Auth.refresh().catch(() => {}); };
+      document.addEventListener('visibilitychange', fn);
+      return () => document.removeEventListener('visibilitychange', fn);
+    }, [user && user.id, user && user.verified]);
+
     // expose openAuthModal globally (used in page components)
     useEffect(() => { window.openAuthModal = () => setShowAuth(true); }, []);
 
-    const ctx = { lang, t, applyLang, user, setUser, showAuth, setShowAuth, navigate };
+    const ctx = { lang, t, applyLang, user, showAuth, setShowAuth, navigate };
 
     return html`
       <${Ctx.Provider} value=${ctx}>

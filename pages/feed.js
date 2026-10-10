@@ -55,7 +55,7 @@
           ${list.map(c => html`
             <${CommentItem} key=${c.id} c=${c} postId=${postId} currentUser=${user} onDelete=${del}/>`)}
         </div>
-        ${user
+        ${user && user.verified
           ? html`
             <div class="comment-input-row">
               <input class="comment-input" value=${draft}
@@ -66,7 +66,7 @@
             </div>`
           : html`
             <div class="comment-login-prompt"
-                 dangerouslySetInnerHTML=${{ __html: t.comment_login.replace('<a>', '<a onclick="openAuthModal()" style="cursor:pointer;color:var(--gold);font-weight:700">')}}>
+                 dangerouslySetInnerHTML=${{ __html: (user ? t.comment_verify : t.comment_login).replace('<a>', '<a onclick="openAuthModal()" style="cursor:pointer;color:var(--gold);font-weight:700">')}}>
             </div>`}
       </div>`;
   }
