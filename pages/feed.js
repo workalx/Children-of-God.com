@@ -1,6 +1,6 @@
-/* pages/feed.js — завантажується тільки при переході на стрічку */
+/* pages/feed.js — стрічка (#feed) і сторінка одного поста з усіма медіа (#post/<id>) */
 (function () {
-  const { useState, useEffect, useCallback, useContext } = React;
+  const { useState, useEffect, useRef } = React;
   const html = window.html;
   const Ctx  = window.useApp;
 
@@ -74,12 +74,86 @@
       </div>`;
   }
 
-  /* ── Post card ── */
-  function PostCard({ p, idx, lang, t, user, navLogo }) {
+  /* ── Одне медіа на всю ширину (пост з одним медіа, лайтбокс) ── */
+  function MediaFull({ src, cls, autoPlay }) {
+    const m = window.mediaInfo(src);
+    if (!m) return null;
+    if (m.kind === 'youtube') return html`
+      <iframe class=${cls} src=${m.src} loading="lazy" frameBorder="0"
+              allow="autoplay; encrypted-media; fullscreen" allowFullScreen
+              style=${{ aspectRatio: '16 / 9', maxHeight: 'none', width: cls === 'lightbox-img' ? 'min(90vw, 150vh)' : '100%' }}></iframe>`;
+    if (m.kind === 'video') return html`
+      <video class=${cls} src=${m.src} controls autoPlay=${autoPlay} playsInline
+             style=${cls === 'post-image' ? { maxHeight: '480px', width: '100%' } : null}></video>`;
+    return html`<img class=${cls} src=${m.src} alt="" loading="lazy" onError=${e=>e.target.style.display='none'}/>`;
+  }
+
+  /* ── Плитка-мініатюра в сітці ── */
+  function MediaTile({ src, more, onClick }) {
+    const m = window.mediaInfo(src);
+    return html`
+      <button class="post-tile" onClick=${onClick}>
+        ${m.kind === 'video'
+          ? html`<video src=${m.src} muted playsInline preload="metadata"></video>`
+          : html`<img src=${m.kind === 'youtube' ? m.thumb : m.src} alt="" loading="lazy"
+                      onError=${e=>e.target.style.visibility='hidden'}/>`}
+        ${m.kind !== 'image' && html`<span class="post-tile-play">▶</span>`}
+        ${more > 0 && html`<span class="post-tile-more">+${more}</span>`}
+      </button>`;
+  }
+
+  /* ── Lightbox — перегляд медіа поста на весь екран ── */
+  function Lightbox({ items, start, onClose }) {
+    const [idx, setIdx] = useState(start);
+    const touchX = useRef(null);
+    const step = d => setIdx(i => (i + d + items.length) % items.length);
+
+    useEffect(() => {
+      const fn = e => {
+        if (e.key === 'Escape')     onClose();
+        if (e.key === 'ArrowRight') step(1);
+        if (e.key === 'ArrowLeft')  step(-1);
+      };
+      document.addEventListener('keydown', fn);
+      return () => document.removeEventListener('keydown', fn);
+    }, [items.length]);
+
+    // свайп на телефоні
+    function onTouchEnd(e) {
+      const dx = e.changedTouches[0].clientX - touchX.current;
+      if (Math.abs(dx) > 50) step(dx < 0 ? 1 : -1);
+    }
+
+    return html`
+      <div class="lightbox-overlay" onClick=${e => e.target === e.currentTarget && onClose()}
+           onTouchStart=${e => { touchX.current = e.touches[0].clientX; }} onTouchEnd=${onTouchEnd}>
+        <button class="lightbox-close" onClick=${onClose}>✕</button>
+        ${items.length > 1 && html`<button class="lightbox-prev" onClick=${() => step(-1)}>‹</button>`}
+        <div class="lightbox-img-wrap">
+          <${MediaFull} key=${idx} src=${items[idx]} cls="lightbox-img" autoPlay=${true}/>
+          <div class="lightbox-counter">${idx + 1} / ${items.length}</div>
+        </div>
+        ${items.length > 1 && html`<button class="lightbox-next" onClick=${() => step(1)}>›</button>`}
+      </div>`;
+  }
+
+  /* ── Post card ──
+     У стрічці показує обрані 1–4 медіа і кнопку «Переглянути все»;
+     full — сторінка поста з усіма медіа */
+  function PostCard({ p, idx, lang, t, user, navLogo, full }) {
+    const { navigate } = Ctx();
     const [liked, setLiked] = useState(false);
     const [likes, setLikes] = useState(p.likes || 0);
+    const [open,  setOpen]  = useState(null);   // індекс медіа в лайтбоксі
     const postId = String(p.id || idx);
     const text   = getPostText(p, lang);
+    const all    = window.postMedia(p);
+    const shown  = full ? all : window.postPreview(p);
+
+    function openPost() {
+      window.__feedReturnTo = postId;
+      navigate('post/' + postId);
+    }
 
     function toggleLike() {
       const next = !liked;
@@ -87,18 +161,26 @@
       setLikes(l => next ? l + 1 : Math.max(0, l - 1));
     }
 
-    const m = window.mediaInfo(p.image);
-    const media = !m ? null
-      : m.kind === 'youtube'
-        ? html`<iframe class="post-image" src=${m.src} loading="lazy" frameBorder="0"
-                       allow="autoplay; encrypted-media; fullscreen" allowFullScreen
-                       style=${{ aspectRatio: '16 / 9', maxHeight: 'none' }}></iframe>`
-      : m.kind === 'video'
-        ? html`<video class="post-image" src=${m.src} controls style=${{ maxHeight: '480px', width: '100%' }}></video>`
-        : html`<img class="post-image" src=${m.src} alt="" loading="lazy" onError=${e=>e.target.style.display='none'}/>`;
+    const media = all.length === 0 ? null
+      : all.length === 1
+        ? html`<${MediaFull} src=${all[0]} cls="post-image"/>`
+      : full
+        ? html`
+          <div class="post-grid post-grid--all">
+            ${all.map((src, i) => html`<${MediaTile} key=${src} src=${src} onClick=${() => setOpen(i)}/>`)}
+          </div>`
+        : html`
+          <div class=${'post-grid post-grid--' + shown.length}>
+            ${shown.map((src, i) => html`
+              <${MediaTile} key=${src} src=${src} onClick=${openPost}
+                            more=${i === shown.length - 1 ? all.length - shown.length : 0}/>`)}
+          </div>
+          <button class="post-view-all" onClick=${openPost}>
+            ${t.post_view_all} <span>${all.length}</span>
+          </button>`;
 
     return html`
-      <article class="post-card">
+      <article class="post-card" id=${'post-' + postId}>
         <div class="post-header">
           <div class="post-avatar">✝</div>
           <div class="post-meta">
@@ -114,15 +196,13 @@
           </button>
         </div>
         <${Comments} postId=${postId} lang=${lang} t=${t} user=${user}/>
+        ${open !== null && html`<${Lightbox} items=${all} start=${open} onClose=${() => setOpen(null)}/>`}
       </article>`;
   }
 
-  /* ── Feed Page ── */
-  function FeedPage() {
-    const { lang, t, user } = Ctx();
+  // спільні пости з posts.json; локальний кеш — лише якщо файл недоступний
+  function usePosts() {
     const [posts, setPosts] = useState(null);
-
-    // спільні пости з posts.json; локальний кеш — лише якщо файл недоступний
     useEffect(() => {
       let alive = true;
       fetch('posts.json?t=' + Date.now(), { cache: 'no-store' })
@@ -131,6 +211,20 @@
         .then(p => { if (alive) setPosts(Array.isArray(p) ? p : []); });
       return () => { alive = false; };
     }, []);
+    return posts;
+  }
+
+  /* ── Feed Page ── */
+  function FeedPage() {
+    const { lang, t, user } = Ctx();
+    const posts = usePosts();
+
+    // після повернення зі сторінки поста — назад до того самого місця стрічки
+    useEffect(() => {
+      const el = posts && window.__feedReturnTo && document.getElementById('post-' + window.__feedReturnTo);
+      if (el) el.scrollIntoView({ block: 'center', behavior: 'instant' });
+      if (posts) window.__feedReturnTo = null;
+    }, [posts]);
 
     return html`
       <div>
@@ -154,6 +248,24 @@
       </div>`;
   }
 
+  /* ── Post Page (#post/<id>) — пост з усіма медіа ── */
+  function PostPage({ param }) {
+    const { lang, t, user, navigate } = Ctx();
+    const posts = usePosts();
+    const idx   = posts ? posts.findIndex((x, i) => String(x.id || i) === param) : -1;
+
+    return html`
+      <div class="feed-wrap">
+        <a class="post-back" href="#feed" onClick=${e => { e.preventDefault(); navigate('feed'); }}>${t.post_back}</a>
+        ${!posts
+          ? html`<div class="page-loader">⏳</div>`
+          : idx < 0
+          ? html`<div class="feed-empty"><span class="icon">🕊️</span><p>${t.post_not_found}</p></div>`
+          : html`<${PostCard} full=${true} p=${posts[idx]} idx=${idx} lang=${lang} t=${t} user=${user} navLogo=${t.nav_logo}/>`}
+      </div>`;
+  }
+
   window.Pages = window.Pages || {};
   window.Pages.feed = FeedPage;
+  window.Pages.post = PostPage;
 })();
