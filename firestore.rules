@@ -1,0 +1,28 @@
+// Правила доступу до бази Firestore.
+// Цей файл — копія для історії: чинними є правила, вставлені в консолі Firebase
+// (Firestore Database → Rules). Після зміни тут їх треба вставити туди ще раз.
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isAdmin()  { return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+
+    // Картка користувача: пише лише власник, читає власник і адміністратор
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['username', 'email', 'provider', 'joinedAt', 'lastLoginAt'])
+        && request.resource.data.username is string && request.resource.data.username.size() <= 40
+        && request.resource.data.email == request.auth.token.email;
+      allow delete: if isAdmin();
+    }
+
+    // Адміністратори додаються лише вручну в консолі Firebase
+    match /admins/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+  }
+}
