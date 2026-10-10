@@ -1,5 +1,5 @@
 /* pages/gallery.js
-   Завантажує список з img/gallery.json,
+   Показує фото з постів і архів із img/gallery.json (window.loadGallery),
    кожне фото отримує src ТІЛЬКИ коли воно входить у viewport (IntersectionObserver).
 */
 (function () {
@@ -8,7 +8,7 @@
   const Ctx  = window.useApp;
 
   /* ── Одне фото з ледачим завантаженням ──────────────────── */
-  function LazyImage({ filename, index }) {
+  function LazyImage({ src, index }) {
     const wrapRef  = useRef();
     const [inView,  setInView]  = useState(false);   // чи видно на екрані
     const [loaded,  setLoaded]  = useState(false);   // чи завантажилось
@@ -41,8 +41,8 @@
            onClick=${() => window.__galleryOpen && window.__galleryOpen(index)}>
         ${inView
           ? html`<img
-              src=${'img/' + filename}
-              alt=${filename}
+              src=${src}
+              alt=""
               loading="lazy"
               onLoad=${()  => setLoaded(true)}
               onError=${() => setBroken(true)}
@@ -71,7 +71,7 @@
         <button class="lightbox-prev"
                 onClick=${() => setIdx(i => (i - 1 + images.length) % images.length)}>‹</button>
         <div class="lightbox-img-wrap">
-          <img src=${'img/' + images[idx]} alt=${images[idx]} class="lightbox-img"/>
+          <img src=${images[idx]} alt="" class="lightbox-img"/>
           <div class="lightbox-counter">${idx + 1} / ${images.length}</div>
         </div>
         <button class="lightbox-next"
@@ -93,17 +93,10 @@
     }, []);
 
     useEffect(() => {
-      fetch('img/gallery.json')
-        .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-        .then(list => {
-          if (!Array.isArray(list) || list.length === 0) {
-            setStatus('empty');
-          } else {
-            setImages(list);
-            setStatus('ok');
-          }
-        })
-        .catch(() => setStatus('empty'));
+      window.loadGallery().then(list => {
+        setImages(list);
+        setStatus(list.length ? 'ok' : 'empty');
+      });
     }, []);
 
     return html`
@@ -127,7 +120,7 @@
             <p class="gallery-count">${images.length} ${t.gallery_photos}</p>
             <div class="gallery-full-grid">
               ${images.map((f, i) => html`
-                <${LazyImage} key=${f + i} filename=${f} index=${i}/>`)}
+                <${LazyImage} key=${f} src=${f} index=${i}/>`)}
             </div>`}
         </div>
 
