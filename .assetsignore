@@ -1,0 +1,4 @@
+# Що Cloudflare не викладає на сайт: службові файли Git і цей список
+.git
+.gitignore
+.assetsignore
