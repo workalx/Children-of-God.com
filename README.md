@@ -5,7 +5,8 @@ A multi-page website for **"Children of God"** ("Діти Божі"), a Ukrainia
 ## Features
 
 - **Hash-based routing** (`#feed`, `#about`, `#donate`, `#admin`) with pages loaded on demand — no bundler, no build step
-- **Trilingual UI** — Ukrainian / English / Russian, switchable from the nav, with English as the default
+- **Trilingual UI** — Ukrainian / English / Russian. The first visit opens in the device language (Ukrainian or Russian, anything else → English); a language picked from the nav is remembered after that
+- **Mobile header** — on phones and tablets (≤900px) the nav collapses to the logo icon, a language pill with a dropdown, and a side menu with the account, page links and a compact footer
 - **News feed** — Instagram-style post feed with likes and comments, both stored in Firestore so every visitor sees the same ones. Posts live in `posts.json` (media in `media/`) in this repository, so every visitor sees the same feed. A post can carry any number of photos/videos: the feed card shows the 1–4 the admin picked, and "View all" opens the post's own page (`#post/<id>`) with the full grid and a lightbox
 - **User accounts** — Firebase Authentication: email and password with email confirmation, or Google / GitHub sign-in. Access rules for the Firestore database are kept in `firestore.rules`
 - **About page** — group bio, photo gallery, embedded videos, and contact info, all lazy-rendered via `IntersectionObserver` as you scroll

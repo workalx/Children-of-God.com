@@ -13,6 +13,15 @@ window.html = htm.bind(React.createElement);
   const FEED_LOCKED = false;
   const HOME_PAGE = FEED_LOCKED ? 'about' : 'feed';
 
+  const YOUTUBE_URL = 'https://www.youtube.com/@child-of_God-t7o';
+  const LANGS = [['uk', 'UA', 'Українська'], ['en', 'EN', 'English'], ['ru', 'RU', 'Русский']];
+
+  // мова пристрою: українська та російська — своїми, усе інше — англійською
+  function deviceLang() {
+    const l = String((navigator.languages && navigator.languages[0]) || navigator.language || '').slice(0, 2).toLowerCase();
+    return l === 'uk' || l === 'ru' ? l : 'en';
+  }
+
   /* ─────────────────────────────
      I18N
   ───────────────────────────── */
@@ -20,6 +29,7 @@ window.html = htm.bind(React.createElement);
     uk: {
       nav_logo: '✝ Діти Божі', nav_home: 'Стрічка', nav_about: 'Про нас', nav_gallery: 'Галерея', nav_donate: 'Донат',
       login_btn: 'Увійти', logout_btn: 'Вийти', greeting: 'Привіт,',
+      menu_open: 'Відкрити меню', menu_close: 'Закрити меню', lang_label: 'Мова сайту',
       auth_tab_login: 'Увійти', auth_tab_register: 'Реєстрація',
       auth_name: "Ім'я", auth_email: 'Email', auth_password: 'Пароль',
       auth_or: 'або', auth_forgot: 'Забули пароль?',
@@ -78,6 +88,7 @@ window.html = htm.bind(React.createElement);
     en: {
       nav_logo: '✝ Children of God', nav_home: 'Feed', nav_about: 'About Us', nav_gallery: 'Gallery', nav_donate: 'Donate',
       login_btn: 'Log in', logout_btn: 'Log out', greeting: 'Hi,',
+      menu_open: 'Open menu', menu_close: 'Close menu', lang_label: 'Site language',
       auth_tab_login: 'Log in', auth_tab_register: 'Register',
       auth_name: 'Name', auth_email: 'Email', auth_password: 'Password',
       auth_or: 'or', auth_forgot: 'Forgot password?',
@@ -136,6 +147,7 @@ window.html = htm.bind(React.createElement);
     ru: {
       nav_logo: '✝ Дети Божьи', nav_home: 'Лента', nav_about: 'О нас', nav_gallery: 'Галерея', nav_donate: 'Донат',
       login_btn: 'Войти', logout_btn: 'Выйти', greeting: 'Привет,',
+      menu_open: 'Открыть меню', menu_close: 'Закрыть меню', lang_label: 'Язык сайта',
       auth_tab_login: 'Войти', auth_tab_register: 'Регистрация',
       auth_name: 'Имя', auth_email: 'Email', auth_password: 'Пароль',
       auth_or: 'или', auth_forgot: 'Забыли пароль?',
@@ -243,28 +255,120 @@ window.html = htm.bind(React.createElement);
   /* ─────────────────────────────
      Nav
   ───────────────────────────── */
-  const Nav = memo(function Nav({ page, navigate }) {
-    const { lang, t, applyLang, user, setShowAuth } = useContext(Ctx);
+  function navPages(t) {
+    return [['feed', t.nav_home], ['about', t.nav_about], ['donate', t.nav_donate]]
+      .filter(([p]) => !(FEED_LOCKED && p === 'feed'));
+  }
 
-    function doLogout() { Auth.logout().catch(() => {}); }
+  function PageLinks({ className, page, onGo }) {
+    const { t, navigate } = useContext(Ctx);
+    return html`
+      <ul class=${className}>
+        ${navPages(t).map(([p, label]) => html`
+          <li key=${p}>
+            <a href=${'#' + p}
+               class=${page === p ? 'active' : ''}
+               onClick=${e => { e.preventDefault(); navigate(p); onGo && onGo(); }}>
+              ${label}
+            </a>
+          </li>`)}
+      </ul>`;
+  }
+
+  function doLogout() { Auth.logout().catch(() => {}); }
+
+  /* Плашка мови для телефона: показує поточну мову, по тапу — список у стовпчик */
+  function LangMenu() {
+    const { lang, t, applyLang } = useContext(Ctx);
+    const [open, setOpen] = useState(false);
+    const ref = useRef();
+
+    useEffect(() => {
+      if (!open) return;
+      const close = e => {
+        if (e.type === 'keydown' ? e.key === 'Escape' : !ref.current.contains(e.target)) setOpen(false);
+      };
+      document.addEventListener('pointerdown', close);
+      document.addEventListener('keydown', close);
+      return () => {
+        document.removeEventListener('pointerdown', close);
+        document.removeEventListener('keydown', close);
+      };
+    }, [open]);
+
+    const current = LANGS.find(([l]) => l === lang) || LANGS[1];
+    return html`
+      <div class="nav-lang" ref=${ref}>
+        <div class="lang-switcher">
+          <button class="lang-btn active nav-lang-toggle" aria-label=${t.lang_label}
+                  aria-haspopup="listbox" aria-expanded=${open} onClick=${() => setOpen(o => !o)}>
+            ${current[1]}<span class=${'nav-lang-caret' + (open ? ' up' : '')}>▾</span>
+          </button>
+        </div>
+        ${open && html`
+          <ul class="nav-lang-menu" role="listbox" aria-label=${t.lang_label}>
+            ${LANGS.map(([l, code, name]) => html`
+              <li key=${l}>
+                <button class=${'nav-lang-opt' + (l === lang ? ' active' : '')} role="option" aria-selected=${l === lang}
+                        onClick=${() => { applyLang(l); setOpen(false); }}>
+                  <span class="nav-lang-code">${code}</span>${name}
+                </button>
+              </li>`)}
+          </ul>`}
+      </div>`;
+  }
+
+  /* Бічне меню для телефона й планшета */
+  function SideMenu({ open, page, onClose }) {
+    const { t, user, setShowAuth } = useContext(Ctx);
+
+    useEffect(() => {
+      if (!open) return;
+      const fn = e => e.key === 'Escape' && onClose();
+      document.addEventListener('keydown', fn);
+      document.body.classList.add('menu-open');
+      return () => {
+        document.removeEventListener('keydown', fn);
+        document.body.classList.remove('menu-open');
+      };
+    }, [open]);
 
     return html`
-      <nav>
+      <div class=${'side-overlay' + (open ? ' open' : '')} onClick=${onClose}></div>
+      <aside class=${'side-menu' + (open ? ' open' : '')} aria-hidden=${!open} inert=${open ? undefined : ''}>
+        <div class="side-head">
+          ${user
+            ? html`
+                <div class="side-user">
+                  <div class="side-ava">${(user.username || '?').charAt(0).toUpperCase()}</div>
+                  <div class="side-hello">${t.greeting}<strong>${user.username}</strong></div>
+                </div>`
+            : html`<button class="nav-login-btn side-login" onClick=${() => { onClose(); setShowAuth(true); }}>${t.login_btn}</button>`}
+          <button class="side-close" aria-label=${t.menu_close} onClick=${onClose}>✕</button>
+        </div>
+        ${user && html`<button class="nav-logout-btn side-logout" onClick=${() => { doLogout(); onClose(); }}>${t.logout_btn}</button>`}
+        <${PageLinks} className="side-links" page=${page} onGo=${onClose}/>
+        <div class="side-foot">
+          <a class="footer-yt" href=${YOUTUBE_URL} target="_blank" rel="noopener">${t.yt_btn}</a>
+          <div class="footer-copy" dangerouslySetInnerHTML=${{ __html: t.footer }}></div>
+        </div>
+      </aside>`;
+  }
+
+  const Nav = memo(function Nav({ page, navigate }) {
+    const { lang, t, applyLang, user, setShowAuth } = useContext(Ctx);
+    const [menuOpen, setMenuOpen] = useState(false);
+    const closeMenu = useCallback(() => setMenuOpen(false), []);
+
+    return html`
+      <nav class="site-nav">
         <a class="nav-logo-img" href=${'#' + HOME_PAGE} onClick=${e => { e.preventDefault(); navigate(HOME_PAGE); }}>
+          <img src="logo-icon.png" alt=${t.nav_logo} class="nav-logo-icon"/>
           <img src=${lang === 'uk' ? 'logo.png' : lang === 'ru' ? 'logo(2).png' : 'logo(1).png'} alt=${t.nav_logo} class="nav-logo-png" onError=${e => { e.target.style.display='none'; e.target.nextSibling.style.display='inline'; }}/>
           <span class="nav-logo-fallback" style=${{ display:'none' }}>${t.nav_logo}</span>
         </a>
         <div class="nav-right">
-          <ul class="nav-links">
-            ${[['feed', t.nav_home], ['about', t.nav_about], ['donate', t.nav_donate]].filter(([p]) => !(FEED_LOCKED && p === 'feed')).map(([p, label]) => html`
-              <li key=${p}>
-                <a href=${'#' + p}
-                   class=${page === p ? 'active' : ''}
-                   onClick=${e => { e.preventDefault(); navigate(p); }}>
-                  ${label}
-                </a>
-              </li>`)}
-          </ul>
+          <${PageLinks} className="nav-links" page=${page}/>
           <div class="nav-user">
             ${user
               ? html`
@@ -273,23 +377,40 @@ window.html = htm.bind(React.createElement);
               : html`
                   <button class="nav-login-btn" onClick=${() => setShowAuth(true)}>${t.login_btn}</button>`}
           </div>
-          <div class="lang-switcher">
-            ${['uk', 'en', 'ru'].map(l => html`
+          <div class="lang-switcher lang-switcher--full">
+            ${LANGS.map(([l, code]) => html`
               <button key=${l} class=${'lang-btn' + (lang === l ? ' active' : '')}
                       onClick=${() => applyLang(l)}>
-                ${l === 'uk' ? 'UA' : l.toUpperCase()}
+                ${code}
               </button>`)}
           </div>
+          <${LangMenu}/>
+          <button class="nav-burger" aria-label=${t.menu_open} aria-expanded=${menuOpen}
+                  onClick=${() => setMenuOpen(true)}>
+            <span></span><span></span><span></span>
+          </button>
         </div>
-      </nav>`;
+      </nav>
+      <${SideMenu} open=${menuOpen} page=${page} onClose=${closeMenu}/>`;
   });
 
   /* ─────────────────────────────
      Footer
   ───────────────────────────── */
-  function Footer() {
-    const { t } = useContext(Ctx);
-    return html`<footer dangerouslySetInnerHTML=${{ __html: t.footer }}/>`;
+  function Footer({ page }) {
+    const { t, navigate } = useContext(Ctx);
+    return html`
+      <footer class="site-footer">
+        <div class="footer-inner">
+          <a class="footer-brand" href=${'#' + HOME_PAGE} onClick=${e => { e.preventDefault(); navigate(HOME_PAGE); }}>
+            <img src="logo-icon.png" alt="" class="footer-logo"/>
+            <span>${t.nav_logo.replace('✝', '').trim()}</span>
+          </a>
+          <${PageLinks} className="footer-links" page=${page}/>
+          <a class="footer-yt" href=${YOUTUBE_URL} target="_blank" rel="noopener">${t.yt_btn}</a>
+        </div>
+        <div class="footer-copy" dangerouslySetInnerHTML=${{ __html: t.footer }}></div>
+      </footer>`;
   }
 
   /* ─────────────────────────────
@@ -520,7 +641,8 @@ window.html = htm.bind(React.createElement);
   ───────────────────────────── */
   function App() {
     const [lang, setLang] = useState(() => {
-      try { return localStorage.getItem('ditibozhi_lang') || 'en'; } catch { return 'en'; }
+      // мова, яку людина вже вибрала, важливіша за мову пристрою
+      try { return localStorage.getItem('ditibozhi_lang') || deviceLang(); } catch { return deviceLang(); }
     });
     const [page, setPage] = useState(() => location.hash.replace('#', '') || HOME_PAGE);
     const [user, setUser] = useState(Auth.user);
@@ -543,8 +665,9 @@ window.html = htm.bind(React.createElement);
     const applyLang = useCallback(l => {
       setLang(l);
       try { localStorage.setItem('ditibozhi_lang', l); } catch {}
-      document.documentElement.lang = l;
     }, []);
+
+    useEffect(() => { document.documentElement.lang = lang; }, [lang]);
 
     // handle browser back/forward
     useEffect(() => {
@@ -579,14 +702,15 @@ window.html = htm.bind(React.createElement);
     useEffect(() => { window.openAuthModal = () => setShowAuth(true); }, []);
 
     const ctx = { lang, t, applyLang, user, blocked, showAuth, setShowAuth, navigate };
+    const navPage = inFeed ? 'feed' : inAbout ? 'about' : name;
 
     return html`
       <${Ctx.Provider} value=${ctx}>
-        <${Nav} page=${inFeed ? 'feed' : inAbout ? 'about' : name} navigate=${navigate}/>
+        <${Nav} page=${navPage} navigate=${navigate}/>
         <main>
           ${FEED_LOCKED && inFeed ? html`<${FeedLocked}/>` : html`<${PageLoader} page=${name} param=${param}/>`}
         </main>
-        <${Footer}/>
+        <${Footer} page=${navPage}/>
         ${showAuth && html`<${AuthModal}/>`}
       <//>`;
   }
