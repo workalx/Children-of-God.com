@@ -758,50 +758,80 @@ video.lightbox-img, iframe.lightbox-img { background: #000; border: none; }
 
 /* ══ DONATE ══ */
 .donate-section { background: var(--gold-pale); }
-.donate-wrap    { max-width: 800px; margin: 0 auto; text-align: center; }
+.donate-wrap    { max-width: 760px; margin: 0 auto; text-align: center; }
 .donate-desc    { color: var(--text-muted); font-size: 1rem; margin-bottom: 2.5rem; line-height: 1.7; }
-.donate-cards   { display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center; margin-bottom: 2.5rem; }
-.donate-card    {
-  background: #fff; border-radius: 20px; padding: 2rem 2.2rem;
-  width: 220px; text-align: center;
-  box-shadow: 0 4px 20px rgba(10,31,68,.08);
-  border: 2px solid transparent; transition: border-color .25s, transform .25s;
-}
-.donate-card:hover { border-color: var(--gold); transform: translateY(-4px); }
-.donate-card-icon  { font-size: 2.5rem; margin-bottom: .75rem; }
-.donate-card-title { font-family: var(--serif); font-size: 1.1rem; color: var(--blue); font-weight: 700; margin-bottom: .5rem; }
-.donate-card-text  { font-size: .88rem; color: var(--text-muted); line-height: 1.5; }
 .donate-btn {
-  display: inline-flex; align-items: center; gap: .5rem;
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
   background: linear-gradient(135deg,var(--gold),var(--gold-light));
   color: var(--blue); border: none; border-radius: 50px;
-  padding: .9rem 2.5rem; font-size: 1rem; font-weight: 700;
+  padding: .9rem 2.5rem; font-size: 1rem; font-weight: 700; text-decoration: none;
   cursor: pointer; font-family: inherit;
   box-shadow: 0 4px 16px rgba(212,160,23,.4); transition: transform .22s;
 }
 .donate-btn:hover { transform: translateY(-3px); }
-.donate-see-email {
-  background: none; border: none; color: var(--blue-light);
-  font-size: .88rem; cursor: pointer; font-family: inherit;
-  text-decoration: underline; margin-top: .5rem; display: block;
-}
+.donate-btn:disabled { opacity: .55; cursor: not-allowed; transform: none; box-shadow: none; }
+.donate-btn--big { padding: 1.05rem 3rem; font-size: 1.1rem; }
 
-/* Donate modal */
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(10,20,50,.6);
-  z-index: 2000; display: flex; align-items: center; justify-content: center;
+/* головний спосіб — картка */
+.donate-main {
+  background: #fff; border-radius: 24px; padding: 2.4rem 2rem 2rem;
+  border: 2px solid var(--gold); box-shadow: 0 10px 34px rgba(10,31,68,.1);
 }
-.modal-box {
-  background: #fff; border-radius: 20px; padding: 2.5rem 2rem;
-  width: min(420px,92vw); text-align: center;
-  box-shadow: 0 24px 60px rgba(10,31,68,.25); position: relative;
+.donate-main-icon  { font-size: 2.6rem; margin-bottom: .6rem; }
+.donate-main-title { font-family: var(--serif); font-size: clamp(1.3rem, 3vw, 1.6rem); color: var(--blue); margin-bottom: .6rem; }
+.donate-main-text  { color: var(--text-muted); font-size: .95rem; line-height: 1.65; max-width: 520px; margin: 0 auto 1.2rem; }
+.donate-brands { display: flex; flex-wrap: wrap; justify-content: center; gap: .45rem; margin-bottom: 1.6rem; }
+.donate-brand {
+  padding: 4px 12px; border-radius: 8px; background: var(--bg);
+  border: 1px solid #dde3ef; color: var(--blue-mid); font-size: .75rem; font-weight: 800; letter-spacing: .3px;
 }
-.modal-close {
-  position: absolute; top: 14px; right: 16px;
-  background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #9ba8c2;
+.donate-soon { margin-top: .7rem; color: var(--blue-light); font-size: .85rem; font-weight: 600; }
+.donate-main-note { margin-top: 1.1rem; color: var(--text-muted); font-size: .8rem; line-height: 1.5; }
+
+/* інші способи */
+.donate-other { display: flex; align-items: center; gap: 1rem; margin: 2.4rem 0 1.4rem; }
+.donate-other::before, .donate-other::after { content: ''; flex: 1; height: 1px; background: rgba(212,160,23,.5); }
+.donate-other-title {
+  color: var(--blue-mid); font-size: .75rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
 }
-.modal-email { font-size: 1rem; font-weight: 700; color: var(--blue); margin: .4rem 0; }
-.modal-thanks { margin-top: 1rem; color: var(--text-muted); font-size: .9rem; }
+.donate-ways { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; text-align: left; }
+.donate-way {
+  background: #fff; border-radius: 18px; padding: 1.4rem 1.4rem 1.3rem;
+  box-shadow: 0 4px 20px rgba(10,31,68,.07); border: 2px solid transparent;
+  display: flex; flex-direction: column; transition: border-color .25s;
+}
+.donate-way:hover { border-color: rgba(212,160,23,.6); }
+.donate-way-head  { display: flex; align-items: center; gap: .6rem; margin-bottom: .55rem; }
+.donate-way-icon  { font-size: 1.5rem; }
+.donate-way-title { font-family: var(--serif); font-size: 1.1rem; font-weight: 700; color: var(--blue); }
+.donate-way-text  { color: var(--text-muted); font-size: .87rem; line-height: 1.55; margin-bottom: 1rem; flex: 1; }
+.donate-way-btn {
+  display: block; text-align: center; padding: .7rem 1rem; border-radius: 50px;
+  background: var(--blue); color: var(--gold-light); font-weight: 700; font-size: .9rem; text-decoration: none;
+}
+.donate-way-btn:hover { background: var(--blue-mid); }
+.donate-email {
+  display: flex; align-items: center; gap: .5rem;
+  background: var(--bg); border: 1px solid #dde3ef; border-radius: 12px; padding: 6px 6px 6px 12px;
+}
+.donate-email-addr { flex: 1; min-width: 0; overflow-wrap: break-word; color: var(--blue); font-weight: 700; font-size: .85rem; }
+.donate-copy {
+  flex-shrink: 0; padding: 7px 14px; border-radius: 9px; border: none; cursor: pointer; font-family: inherit;
+  background: var(--blue); color: var(--gold-light); font-size: .78rem; font-weight: 700; transition: background .2s;
+}
+.donate-copy.copied { background: #2e7d4f; color: #fff; }
+.donate-note  { margin-top: 2rem; color: var(--text-muted); font-size: .8rem; line-height: 1.5; }
+.donate-bless { margin-top: .5rem; color: var(--blue-mid); font-size: .92rem; font-weight: 600; }
+
+/* сторінка «Дякуємо» */
+.donate-thanks { padding: 2rem 0; }
+.donate-thanks-icon { font-size: 3.4rem; margin-bottom: 1rem; }
+
+@media (max-width: 600px) {
+  .donate-main { padding: 2rem 1.2rem 1.6rem; border-radius: 20px; }
+  .donate-btn--big { width: 100%; padding: 1rem 1.2rem; }
+  .donate-ways { grid-template-columns: 1fr; }
+}
 
 /* ══ ADMIN DARK ══ */
 
