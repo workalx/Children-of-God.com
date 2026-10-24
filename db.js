@@ -123,6 +123,14 @@ const Db = (function () {
       await (on ? mod.setDoc(ref, { by: Auth.user().id, at: mod.serverTimestamp() }) : mod.deleteDoc(ref));
     },
 
+    // Прибирає коментарі й лайки видаленого поста
+    async deletePostData(postId) {
+      const { db, mod } = await fs();
+      const of = name => mod.getDocs(mod.query(mod.collection(db, name), mod.where('postId', '==', postId)));
+      const [comments, likes] = await Promise.all([of('comments'), of('likes')]);
+      await Promise.all([...comments.docs, ...likes.docs].map(d => mod.deleteDoc(d.ref)));
+    },
+
     // Видаляє всі коментарі користувача; повертає, скільки їх було
     async deleteUserComments(uid) {
       const { db, mod } = await fs();

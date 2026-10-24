@@ -164,6 +164,7 @@
     const [likes, setLikes] = useState(0);
     const [open,  setOpen]  = useState(null);   // індекс медіа в лайтбоксі
     const [likeFailed, setLikeFailed] = useState('');
+    const likeBusy = useRef(false);
     const postId = String(p.id || idx);
     const uid    = user ? user.id : null;
 
@@ -184,12 +185,17 @@
 
     function toggleLike() {
       if (!user) { window.openAuthModal(); return; }
-      if (blocked) return;
+      // поки попередній лайк не збережено, нові натискання ігноруємо — інакше «поставити» і «зняти»
+      // можуть дійти до бази в іншому порядку, і екран розійдеться з тим, що збережено
+      if (blocked || likeBusy.current) return;
+      likeBusy.current = true;
       const next = !liked;
       const show = on => { setLiked(on); setLikes(l => Math.max(0, l + (on ? 1 : -1))); };
       show(next); setLikeFailed('');
       // показуємо одразу; якщо зберегти не вдалося — повертаємо як було
-      Db.setLike(postId, next).catch(e => { show(!next); setLikeFailed(saveError(e)); });
+      Db.setLike(postId, next)
+        .catch(e => { show(!next); setLikeFailed(saveError(e)); })
+        .finally(() => { likeBusy.current = false; });
     }
 
     const media = all.length === 0 ? null

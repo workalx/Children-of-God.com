@@ -15,6 +15,13 @@ const FIREBASE_SDK  = 'https://www.gstatic.com/firebasejs/13.0.0/firebase-';
 const AUTH_USER_KEY = 'ditibozhi_user';
 
 const Auth = (function () {
+  // Дані зі старої версії сайту, коли акаунти й коментарі жили в браузері. Серед них — паролі
+  // у вигляді, який легко розкодувати, тож прибираємо їх у кожного, хто заходить на сайт
+  try {
+    ['ditibozhi_users', 'ditibozhi_comments', 'ditibozhi_analytics'].forEach(k => localStorage.removeItem(k));
+    ['ditibozhi_session', 'admin_auth'].forEach(k => sessionStorage.removeItem(k));
+  } catch (e) {}
+
   // Останній відомий користувач — щоб кнопка входу не блимала, поки вантажиться Firebase
   let current = null;
   try { current = JSON.parse(localStorage.getItem(AUTH_USER_KEY)); } catch (e) {}
