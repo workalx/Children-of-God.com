@@ -738,10 +738,11 @@ video.lightbox-img, iframe.lightbox-img { background: #000; border: none; }
 .contact-person-card:hover { transform: translateY(-4px); box-shadow: 0 10px 26px rgba(10,31,68,.14); }
 .contact-person-card.is-active { border-color: var(--gold); }
 .contact-person-photo {
-  width: 84px; height: 84px; border-radius: 50%; margin: 0 auto .9rem;
+  width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 1rem;
   display: flex; align-items: center; justify-content: center;
-  font-size: 2rem; overflow: hidden;
+  font-size: 2.75rem; overflow: hidden;
 }
+.contact-person-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .contact-person-photo.placeholder { background: #f6f8fc; border: 2px dashed rgba(10,31,68,.25); color: var(--text-muted); }
 .contact-person-name { font-family: var(--serif); font-weight: 700; font-size: 1.05rem; color: var(--blue); }
 .contact-person-role { font-size: .85rem; color: var(--text-muted); margin-top: .2rem; }
