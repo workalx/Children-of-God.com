@@ -261,6 +261,7 @@
       },
       admin: {
         name: t.contact_admin_name, role: t.contact_admin_role, text: t.contact_admin_text,
+        photo: 'contacts/valentyna.webp',
         links: [
           { key: 'tg',    cls: 'btn-tg',    icon: ICONS.tg,    label: t.contact_tg,    href: 'https://t.me/ValentynaKuz' },
           { key: 'wa',    cls: 'btn-wa',    icon: ICONS.wa,    label: t.contact_wa,    href: 'https://wa.me/16393840539' },
@@ -285,7 +286,9 @@
                 <div class=${'contact-person-card' + (active === key ? ' is-active' : '')}
                      key=${key}
                      onClick=${() => setActive(a => a === key ? null : key)}>
-                  <div class="contact-person-photo placeholder">👤</div>
+                  ${people[key].photo
+                    ? html`<div class="contact-person-photo"><img src=${people[key].photo} alt=${people[key].name} width="120" height="120" loading="lazy"/></div>`
+                    : html`<div class="contact-person-photo placeholder">👤</div>`}
                   <div class="contact-person-name">${people[key].name}</div>
                   <div class="contact-person-role">${people[key].role}</div>
                 </div>`)}
