@@ -233,6 +233,18 @@
     ig: html`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="white" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zm0 10.162a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>`,
   };
 
+  /* Кнопка Email відкриває новий лист у Gmail з уже вписаним адресатом. На телефонах веб-Gmail
+     ігнорує ці параметри, тому там лишаємо mailto: — він відкриває застосунок пошти (зазвичай Gmail).
+     Телефон визначаємо за браузером, а не за сенсорним екраном: ноутбуки з тачскріном — це комп'ютер. */
+  const IS_PHONE = navigator.userAgentData
+    ? navigator.userAgentData.mobile
+    : /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+
+  function emailHref(name, email) {
+    if (IS_PHONE) return 'mailto:' + email;
+    return 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(name + ' <' + email + '>');
+  }
+
   /* ── Contact section ── */
   function ContactSection({ t }) {
     const [active, setActive] = useState(null); // null | 'dev' | 'admin'
@@ -241,7 +253,7 @@
       dev: {
         name: t.contact_dev_name, role: t.contact_dev_role, text: t.contact_dev_text,
         links: [
-          { key: 'email', cls: 'btn-email', icon: ICONS.email, label: t.contact_email, href: 'mailto:alexhalus201006@gmail.com' },
+          { key: 'email', cls: 'btn-email', icon: ICONS.email, label: t.contact_email, href: emailHref(t.contact_dev_name, 'alexhalus201006@gmail.com') },
           { key: 'tg',    cls: 'btn-tg',    icon: ICONS.tg,    label: t.contact_tg,    href: 'https://t.me/alexkhalus' },
           { key: 'wa',    cls: 'btn-wa',    icon: ICONS.wa,    label: t.contact_wa,    href: 'https://wa.me/13062808898' },
           { key: 'ig',    cls: 'btn-ig',    icon: ICONS.ig,    label: t.contact_ig,    href: 'https://www.instagram.com/oleksandr.khalus/' },
@@ -252,7 +264,7 @@
         links: [
           { key: 'tg',    cls: 'btn-tg',    icon: ICONS.tg,    label: t.contact_tg,    href: 'https://t.me/ValentynaKuz' },
           { key: 'wa',    cls: 'btn-wa',    icon: ICONS.wa,    label: t.contact_wa,    href: 'https://wa.me/16393840539' },
-          { key: 'email', cls: 'btn-email', icon: ICONS.email, label: t.contact_email, href: 'mailto:vvkuznietsova@gmail.com' },
+          { key: 'email', cls: 'btn-email', icon: ICONS.email, label: t.contact_email, href: emailHref(t.contact_admin_name, 'vvkuznietsova@gmail.com') },
         ],
       },
     };
@@ -284,7 +296,7 @@
                 <p class="contact-detail-text">${selected.text}</p>
                 <div class="contact-btns">
                   ${selected.links.map(l => html`
-                    <a class=${'contact-btn ' + l.cls} href=${l.href} target="_blank" key=${l.key}>
+                    <a class=${'contact-btn ' + l.cls} href=${l.href} target=${l.href.startsWith('mailto:') ? undefined : '_blank'} rel="noopener" key=${l.key}>
                       ${l.icon}
                       <span>${l.label}</span>
                     </a>`)}
