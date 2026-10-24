@@ -16,7 +16,7 @@
      з токеном адміністратора, який зберігається тільки в його браузері. */
   const GH_REPO      = 'workalx/Children-of-God.com';
   const GH_BRANCH    = 'main';
-  const GH_API       = 'https://api.github.com/repos/' + GH_REPO + '/contents/';
+  const GH_API       = 'https://api.github.com/repos/' + GH_REPO + '/';
   const GH_RAW       = 'https://raw.githubusercontent.com/' + GH_REPO + '/' + GH_BRANCH + '/';
   const GH_TOKEN_KEY = 'ditibozhi_gh_token';
   const POSTS_FILE   = 'posts.json';
@@ -32,32 +32,33 @@
   const b64dec = s => decodeURIComponent(escape(atob(s.replace(/\s/g, ''))));
 
   async function gh(method, path, body, token = getToken()) {
-    const res = await fetch(GH_API + path + (method === 'GET' ? '?ref=' + GH_BRANCH : ''), {
+    const res = await fetch(GH_API + path, {
       method,
       cache: 'no-store',
       headers: { Accept: 'application/vnd.github+json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
-      body: body ? JSON.stringify({ branch: GH_BRANCH, ...body }) : undefined,
+      body: body ? JSON.stringify(body) : undefined,
     }).catch(() => { throw new Error('Немає зв\'язку з GitHub'); });
     if (res.status === 404 && method === 'GET') return null;
     if (res.ok) return res.json();
     const reason = await res.json().then(j => j.message || '', () => '');
     const tail   = ' (GitHub ' + res.status + (reason ? ': ' + reason : '') + ')';
-    if (res.status === 401) throw new Error('Токен недійсний: скопійований не повністю або сплив термін дії' + tail);
-    if (res.status === 403 && /rate limit/i.test(reason)) throw new Error('Забагато запитів до GitHub — спробуйте за кілька хвилин' + tail);
-    if (res.status === 403 || res.status === 404) throw new Error('Токен не має права запису в ' + GH_REPO + '. У токені потрібно: Repository access → Only select repositories → цей репозиторій; Permissions → Contents → Read and write' + tail);
-    if (res.status === 409) throw new Error('Пости щойно змінились — спробуйте ще раз');
-    throw new Error('Помилка GitHub' + tail);
+    const fail   = msg => Object.assign(new Error(msg + tail), { status: res.status });
+    if (res.status === 401) throw fail('Токен недійсний: скопійований не повністю або сплив термін дії');
+    if (res.status === 403 && /rate limit/i.test(reason)) throw fail('Забагато запитів до GitHub — спробуйте за кілька хвилин');
+    if (res.status === 403 || res.status === 404) throw fail('Токен не має права запису в ' + GH_REPO + '. У токені потрібно: Repository access → Only select repositories → цей репозиторій; Permissions → Contents → Read and write');
+    if (res.status === 409 || res.status === 422) throw fail('Пости щойно змінились — спробуйте ще раз');
+    throw fail('Помилка GitHub');
   }
 
-  async function fetchRemotePosts(token) {
-    const f = await gh('GET', POSTS_FILE, null, token);
+  async function fetchRemotePosts(token, ref = GH_BRANCH) {
+    const f = await gh('GET', 'contents/' + POSTS_FILE + '?ref=' + ref, null, token);
     const posts = f ? JSON.parse(b64dec(f.content) || '[]') : [];
-    return { posts: Array.isArray(posts) ? posts : [], sha: f ? f.sha : undefined };
+    return Array.isArray(posts) ? posts : [];
   }
 
   // Тягне posts.json у локальний кеш
   async function pullPosts() {
-    const { posts } = await fetchRemotePosts();
+    const posts = await fetchRemotePosts();
     // старі пости, що жили лише в цьому браузері, зберігаємо про всяк випадок
     const local = localStorage.getItem('ditibozhi_posts');
     if (local && local !== '[]' && !localStorage.getItem('ditibozhi_posts_backup')) {
@@ -66,36 +67,49 @@
     savePosts(posts);
   }
 
-  // Застосовує fn до свіжої версії posts.json і комітить результат
-  async function updatePosts(fn, message) {
-    const { posts, sha } = await fetchRemotePosts();
-    const next = fn(posts);
-    await gh('PUT', POSTS_FILE, { message, content: b64enc(JSON.stringify(next, null, 2) + '\n'), sha });
-    savePosts(next);
-  }
-
-  // Завантажує data:-URL як файл у media/ і повертає шлях до нього
+  // Завантажує data:-URL у репозиторій як «заготовку» файлу (blob) і повертає шлях та її sha.
+  // На сайті файл з'явиться лише разом із комітом у commitPosts
   async function uploadMedia(dataUrl, n = 0) {
     const comma   = dataUrl.indexOf(',');
     const content = dataUrl.slice(comma + 1);
+    const sub     = dataUrl.slice(dataUrl.indexOf('/') + 1, dataUrl.indexOf(';'));
+    // SVG може містити скрипт, а фото чи відео в такому форматі не буває
+    if (/svg/i.test(sub)) throw new Error('SVG-файли не підтримуються — додайте фото чи відео');
     if (content.length * 0.75 > MAX_MEDIA_MB * 1024 * 1024) {
       throw new Error('Файл завеликий (макс. ' + MAX_MEDIA_MB + ' МБ) — для відео вставте посилання');
     }
-    const sub  = dataUrl.slice(dataUrl.indexOf('/') + 1, dataUrl.indexOf(';'));
-    const ext  = { jpeg: 'jpg', quicktime: 'mov', 'svg+xml': 'svg' }[sub] || sub.replace(/[^a-z0-9]/gi, '');
+    const ext  = { jpeg: 'jpg', quicktime: 'mov' }[sub] || sub.replace(/[^a-z0-9]/gi, '');
     const path = MEDIA_DIR + Date.now() + '-' + n + '.' + ext;
-    await gh('PUT', path, { message: 'Додати медіа: ' + path, content });
-    return path;
+    const blob = await gh('POST', 'git/blobs', { content, encoding: 'base64' });
+    return { path, sha: blob.sha };
   }
 
-  // Видаляє файли з media/ по одному: паралельні коміти в одну гілку конфліктували б
-  async function removeMedia(paths) {
-    for (const path of paths) {
-      if (!path || !path.startsWith(MEDIA_DIR)) continue;
+  // Змінює posts.json, додає й видаляє файли медіа одним комітом: сайт перебудовується один раз,
+  // а збій посередині нічого не лишає напівзробленим. add — { шлях: sha заготовки }, remove — шляхи
+  async function commitPosts(fn, message, add = {}, remove = []) {
+    for (let attempt = 0; ; attempt++) {
+      const head  = (await gh('GET', 'git/ref/heads/' + GH_BRANCH)).object.sha;
+      const base  = (await gh('GET', 'git/commits/' + head)).tree.sha;
+      const next  = fn(await fetchRemotePosts(undefined, head));
+      // видаляти можна лише файли з media/, які справді є в репозиторії
+      const files = remove.length ? (await gh('GET', 'contents/' + MEDIA_DIR.slice(0, -1) + '?ref=' + head)) || [] : [];
+      const gone  = remove.filter(p => p && p.startsWith(MEDIA_DIR) && files.some(f => f.path === p) && !(p in add));
+      const tree  = [
+        { path: POSTS_FILE, mode: '100644', type: 'blob', content: JSON.stringify(next, null, 2) + '\n' },
+        ...Object.entries(add).map(([path, sha]) => ({ path, mode: '100644', type: 'blob', sha })),
+        ...gone.map(path => ({ path, mode: '100644', type: 'blob', sha: null })),
+      ];
+      const t = await gh('POST', 'git/trees', { base_tree: base, tree });
+      const c = await gh('POST', 'git/commits', { message, tree: t.sha, parents: [head] });
       try {
-        const f = await gh('GET', path);
-        if (f) await gh('DELETE', path, { message: 'Видалити медіа: ' + path, sha: f.sha });
-      } catch {}
+        await gh('PATCH', 'git/refs/heads/' + GH_BRANCH, { sha: c.sha });
+        savePosts(next);
+        return next;
+      } catch (e) {
+        // хтось закомітив у ту саму мить — будуємо коміт заново поверх свіжої версії
+        if (attempt < 2 && e.status === 422) continue;
+        throw e;
+      }
     }
   }
 
@@ -197,7 +211,7 @@
     const [reading, setReading] = useState(false);
     const ref = useRef();
     async function handle(files) {
-      const list = [...files].filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'));
+      const list = [...files].filter(f => (f.type.startsWith('image/') && !/svg/.test(f.type)) || f.type.startsWith('video/'));
       if (!list.length) return;
       setReading(true);
       const out = [];
@@ -852,35 +866,29 @@
     async function handleSave(data) {
       if (busy || needToken()) return;
       setBusy(true);
-      let uploaded = [];   // файли, які треба прибрати, якщо публікація зірветься
       try {
         const fresh = data.media.filter(s => s.startsWith('data:'));
-        const paths = {};
+        const paths = {}, add = {};
         for (let i = 0; i < fresh.length; i++) {
           setProgress('Завантаження медіа ' + (i + 1) + ' з ' + fresh.length + '…');
-          paths[fresh[i]] = await uploadMedia(fresh[i], i);
-          uploaded.push(paths[fresh[i]]);
+          const { path, sha } = await uploadMedia(fresh[i], i);
+          paths[fresh[i]] = path; add[path] = sha;
         }
-        setProgress('');
+        setProgress('Публікація…');
         const media   = data.media.map(s => paths[s] || s);
         const preview = data.preview.map(s => paths[s] || s);
         // image — перше медіа картки: для мініатюр і для старих версій стрічки
         const post = { ...data, media, preview, image: preview[0] || media[0] || '' };
         if (editing) {
-          await updatePosts(all => all.map(p => p.id === editing.id ? { ...p, ...post } : p), 'Оновити пост');
-          uploaded = [];
+          const dropped = window.postMedia(editing).filter(s => !media.includes(s));
+          await commitPosts(all => all.map(p => p.id === editing.id ? { ...p, ...post } : p), 'Оновити пост', add, dropped);
           toast('Пост оновлено');
-          await removeMedia(window.postMedia(editing).filter(s => !media.includes(s)));
         } else {
-          await updatePosts(all => [{ id: Date.now(), likes: 0, ...post }, ...all], 'Новий пост');
-          uploaded = [];
+          await commitPosts(all => [{ id: Date.now(), likes: 0, ...post }, ...all], 'Новий пост', add);
           toast('Пост опубліковано — з\'явиться на сайті за 1–2 хв');
         }
         refresh(); setEditing(null); setFormKey(k => k + 1);
-      } catch (e) {
-        toast(e.message, 'error');
-        await removeMedia(uploaded);
-      }
+      } catch (e) { toast(e.message, 'error'); }
       setProgress(''); setBusy(false);
     }
 
@@ -889,9 +897,11 @@
       setBusy(true);
       try {
         const post = getPosts().find(p => p.id === id);
-        await updatePosts(all => all.filter(p => p.id !== id), 'Видалити пост');
+        await commitPosts(all => all.filter(p => p.id !== id), 'Видалити пост', {}, window.postMedia(post));
         refresh(); toast('Пост видалено');
-        await removeMedia(window.postMedia(post));
+        // коментарі й лайки поста більше нікому не потрібні
+        Db.deletePostData(String(id)).then(loadData,
+          e => toast('Пост видалено, але його коментарі й лайки лишились у базі (' + (e.code || e.message) + ')', 'error'));
       } catch (e) { toast(e.message, 'error'); }
       setBusy(false);
     }

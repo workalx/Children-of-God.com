@@ -61,7 +61,7 @@ service cloud.firestore {
         && request.resource.data.postId is string && request.resource.data.postId.size() <= 40
         && (!('createdAt' in request.resource.data) || request.resource.data.createdAt == request.time)
         && id == request.resource.data.postId + '_' + request.auth.uid;
-      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      allow delete: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
     }
 
     // Лічильники відвідувань, один документ на день. Писати може будь-хто, але тільки
