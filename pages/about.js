@@ -252,6 +252,7 @@
     const people = {
       dev: {
         name: t.contact_dev_name, role: t.contact_dev_role, text: t.contact_dev_text,
+        photo: 'contacts/sasha.webp',
         links: [
           { key: 'email', cls: 'btn-email', icon: ICONS.email, label: t.contact_email, href: emailHref(t.contact_dev_name, 'alexhalus201006@gmail.com') },
           { key: 'tg',    cls: 'btn-tg',    icon: ICONS.tg,    label: t.contact_tg,    href: 'https://t.me/alexkhalus' },
