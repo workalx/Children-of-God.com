@@ -245,9 +245,61 @@
     return 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(name + ' <' + email + '>');
   }
 
+  function PersonPhoto({ person }) {
+    return person.photo
+      ? html`<div class="contact-person-photo"><img src=${person.photo} alt=${person.name} width="120" height="120" loading="lazy"/></div>`
+      : html`<div class="contact-person-photo placeholder">👤</div>`;
+  }
+
+  function ContactLinks({ links }) {
+    return html`
+      <div class="contact-btns">
+        ${links.map(l => html`
+          <a class=${'contact-btn ' + l.cls} href=${l.href} target=${l.href.startsWith('mailto:') ? undefined : '_blank'} rel="noopener" key=${l.key}>
+            ${l.icon}
+            <span>${l.label}</span>
+          </a>`)}
+      </div>`;
+  }
+
+  /* На телефоні картка контакту відкривається у вікні поверх сторінки: фото, ім'я, роль, опис і кнопки.
+     Через портал у body — щоб position: fixed не залежав від анімацій секцій. */
+  function ContactPopup({ person, onClose }) {
+    useEffect(() => {
+      const onKey = e => e.key === 'Escape' && onClose();
+      document.addEventListener('keydown', onKey);
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.removeEventListener('keydown', onKey);
+        document.body.style.overflow = prevOverflow;
+      };
+    }, []);
+
+    return ReactDOM.createPortal(html`
+      <div class="contact-popup-overlay" onClick=${e => e.target === e.currentTarget && onClose()}>
+        <div class="contact-popup" role="dialog" aria-modal="true" aria-label=${person.name}>
+          <button class="contact-popup-close" onClick=${onClose}>✕</button>
+          <${PersonPhoto} person=${person}/>
+          <div class="contact-person-name">${person.name}</div>
+          <div class="contact-person-role">${person.role}</div>
+          <p class="contact-detail-text">${person.text}</p>
+          <${ContactLinks} links=${person.links}/>
+        </div>
+      </div>`, document.body);
+  }
+
+  const PHONE_WIDTH = '(max-width: 600px)';
+
   /* ── Contact section ── */
   function ContactSection({ t }) {
     const [active, setActive] = useState(null); // null | 'dev' | 'admin'
+    const [popup, setPopup]   = useState(null); // те саме, але у вікні на телефоні
+
+    function choose(key) {
+      if (window.matchMedia(PHONE_WIDTH).matches) setPopup(key);
+      else setActive(a => a === key ? null : key);
+    }
 
     const people = {
       dev: {
@@ -286,10 +338,8 @@
               ${['dev', 'admin'].map(key => html`
                 <div class=${'contact-person-card' + (active === key ? ' is-active' : '')}
                      key=${key}
-                     onClick=${() => setActive(a => a === key ? null : key)}>
-                  ${people[key].photo
-                    ? html`<div class="contact-person-photo"><img src=${people[key].photo} alt=${people[key].name} width="120" height="120" loading="lazy"/></div>`
-                    : html`<div class="contact-person-photo placeholder">👤</div>`}
+                     onClick=${() => choose(key)}>
+                  <${PersonPhoto} person=${people[key]}/>
                   <div class="contact-person-name">${people[key].name}</div>
                   <div class="contact-person-role">${people[key].role}</div>
                 </div>`)}
@@ -298,14 +348,10 @@
             ${selected && html`
               <div class="contact-detail">
                 <p class="contact-detail-text">${selected.text}</p>
-                <div class="contact-btns">
-                  ${selected.links.map(l => html`
-                    <a class=${'contact-btn ' + l.cls} href=${l.href} target=${l.href.startsWith('mailto:') ? undefined : '_blank'} rel="noopener" key=${l.key}>
-                      ${l.icon}
-                      <span>${l.label}</span>
-                    </a>`)}
-                </div>
+                <${ContactLinks} links=${selected.links}/>
               </div>`}
+
+            ${popup && html`<${ContactPopup} person=${people[popup]} onClose=${() => setPopup(null)}/>`}
           </div>
         </div>
       </div>`;

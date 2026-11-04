@@ -757,6 +757,30 @@ video.lightbox-img, iframe.lightbox-img { background: #000; border: none; }
 .contact-detail .contact-btn { padding: 1.1rem 1.4rem; min-width: 100px; font-size: .92rem; }
 .contact-detail .contact-btn svg { width: 28px; height: 28px; }
 
+/* телефон: картка контакту у вікні */
+.contact-popup-overlay {
+  position: fixed; inset: 0; z-index: 2000; background: rgba(10,20,50,.65);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+  animation: lb-in .2s ease;
+}
+.contact-popup {
+  position: relative; width: min(420px, 100%); max-height: calc(100vh - 32px); overflow-y: auto;
+  background: #fff; border-radius: 20px; padding: 2rem 1.25rem 1.5rem; text-align: center;
+  box-shadow: 0 24px 60px rgba(10,31,68,.25); animation: contact-pop .25s ease;
+}
+@keyframes contact-pop { from { opacity: 0; transform: scale(.94) translateY(10px); } to { opacity: 1; transform: none; } }
+.contact-popup-close {
+  position: absolute; top: 12px; right: 14px; width: 36px; height: 36px;
+  background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #9ba8c2;
+}
+.contact-popup-close:hover { color: var(--blue); }
+.contact-popup .contact-person-photo { width: 140px; height: 140px; }
+.contact-popup .contact-person-name { font-size: 1.3rem; }
+.contact-popup .contact-detail-text { margin: 1rem 0 1.4rem; font-size: .95rem; }
+.contact-popup .contact-btns { gap: .7rem; }
+.contact-popup .contact-btn { padding: 1rem 1.1rem; min-width: 88px; font-size: .85rem; }
+.contact-popup .contact-btn svg { width: 26px; height: 26px; }
+
 /* ══ DONATE ══ */
 .donate-section { background: var(--gold-pale); }
 .donate-wrap    { max-width: 760px; margin: 0 auto; text-align: center; }
